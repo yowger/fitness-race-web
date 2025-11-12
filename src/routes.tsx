@@ -1,39 +1,33 @@
-// import LandingPage from "./features/landing/pages/LandingPage"
-
 import { createBrowserRouter } from "react-router-dom"
+
 import Providers from "./Providers"
 import AuthRouteGuard from "./features/auth/layouts/AuthRouteGuard"
 import SignInPage from "./features/auth/pages/SignInPage"
 import SignUpPage from "./features/auth/pages/SignUpPage"
-
-// const routes = [{ path: "/", element: <LandingPage /> }]
-
-// export default routes
+import AuthGuestRoute from "./features/auth/layouts/AuthGuestRoute"
 
 const router = createBrowserRouter([
     {
         path: "/",
         element: <Providers />,
         children: [
-            // Public routes
             {
                 path: "/",
                 element: <p>Home</p>,
             },
             {
-                path: "/auth/sign-in",
-                element: <SignInPage />,
-            },
-            {
-                path: "/auth/sign-up",
-                element: <SignUpPage />,
+                element: <AuthGuestRoute />,
+                children: [
+                    { path: "/auth/sign-in", element: <SignInPage /> },
+                    { path: "/auth/sign-up", element: <SignUpPage /> },
+                ],
             },
             {
                 path: "/",
                 element: <AuthRouteGuard />,
                 children: [
                     {
-                        path: "/protected",
+                        path: "/dashboard",
                         element: <p>Protected</p>,
                     },
                 ],
