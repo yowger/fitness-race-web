@@ -85,10 +85,13 @@ export default function RunningLandingPage() {
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                        <button className="group px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full font-bold text-lg hover:shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-105 flex items-center gap-2">
-                            Start Free Trial
+                        <Link
+                            to="/auth/sign-up"
+                            className="group px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full font-bold text-lg hover:shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-105 flex items-center gap-2 text-center"
+                        >
+                            Get Started Free
                             <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-                        </button>
+                        </Link>
                         <button className="px-8 py-4 bg-white/10 backdrop-blur-sm rounded-full font-bold text-lg hover:bg-white/20 transition-all duration-300 flex items-center gap-2">
                             <Play size={20} />
                             Watch Demo
