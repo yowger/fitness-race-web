@@ -1,10 +1,12 @@
 import { useState } from "react"
-import { Link } from "react-router-dom"
-
+import { ArrowLeft, Mail, Lock, Loader2 } from "lucide-react"
 import { supabase } from "../../../lib/supabase"
+import { useNavigate } from "react-router-dom"
 
 const SignInPage = () => {
+    const navigate = useNavigate()
     const [status, setStatus] = useState("")
+    const [isLoading, setIsLoading] = useState(false)
     const [formValues, setFormValues] = useState({
         email: "",
         password: "",
@@ -16,42 +18,159 @@ const SignInPage = () => {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+        setIsLoading(true)
         setStatus("Logging in...")
-        const { error } = await supabase.auth.signInWithPassword({
+
+        const { data, error } = await supabase.auth.signInWithPassword({
             email: formValues.email,
             password: formValues.password,
         })
+
+        setIsLoading(false)
+        setStatus("")
+
         if (error) {
             alert(error.message)
+        } else if (data.session) {
+            navigate("/dashboard", { replace: true })
         }
-        setStatus("")
     }
+
     return (
-        <main>
-            <Link className="home-link" to="/">
-                ◄ Home
-            </Link>
-            <form className="main-container" onSubmit={handleSubmit}>
-                <h1 className="header-text">Sign In</h1>
-                <input
-                    name="email"
-                    onChange={handleInputChange}
-                    type="email"
-                    placeholder="Email"
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-900 flex items-center justify-center p-6 relative overflow-hidden">
+            <div className="absolute inset-0">
+                <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse" />
+                <div
+                    className="absolute top-40 right-10 w-72 h-72 bg-teal-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"
+                    style={{ animationDelay: "1s" }}
                 />
-                <input
-                    name="password"
-                    onChange={handleInputChange}
-                    type="password"
-                    placeholder="Password"
+                <div
+                    className="absolute bottom-20 left-1/2 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"
+                    style={{ animationDelay: "2s" }}
                 />
-                <button type="submit">Login</button>
-                <Link className="auth-link" to="/auth/sign-up">
-                    Don't have an account? Sign Up
-                </Link>
-                {status && <p>{status}</p>}
-            </form>
-        </main>
+            </div>
+
+            <ArrowLeft
+                className="absolute top-8 left-8 w-5 h-5 text-emerald-200 cursor-pointer hover:text-emerald-100 transition-colors duration-300"
+                onClick={() => navigate("/", { replace: true })}
+            />
+
+            <div className="relative z-10 w-full max-w-md">
+                <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 md:p-10 shadow-2xl border border-white/10">
+                    <div className="text-center mb-8">
+                        <div className="inline-block p-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl mb-4">
+                            <svg
+                                className="w-8 h-8 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                                />
+                            </svg>
+                        </div>
+                        <h1 className="text-4xl font-bold text-white mb-2">
+                            Welcome Back
+                        </h1>
+                        <p className="text-emerald-200">
+                            Sign in to continue your journey
+                        </p>
+                    </div>
+
+                    <form className="space-y-5" onSubmit={handleSubmit}>
+                        <div>
+                            <label
+                                htmlFor="email"
+                                className="block text-sm font-medium text-emerald-200 mb-2"
+                            >
+                                Email Address
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Mail className="w-5 h-5 text-emerald-400" />
+                                </div>
+                                <input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    required
+                                    value={formValues.email}
+                                    onChange={handleInputChange}
+                                    placeholder="you@example.com"
+                                    className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-emerald-300/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label
+                                htmlFor="password"
+                                className="block text-sm font-medium text-emerald-200 mb-2"
+                            >
+                                Password
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Lock className="w-5 h-5 text-emerald-400" />
+                                </div>
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type="password"
+                                    required
+                                    value={formValues.password}
+                                    onChange={handleInputChange}
+                                    placeholder="••••••••"
+                                    className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-emerald-300/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300"
+                                />
+                            </div>
+                        </div>
+
+                        {status && (
+                            <p className="text-emerald-300 text-sm text-center">
+                                {status}
+                            </p>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    Signing In...
+                                </>
+                            ) : (
+                                "Sign In"
+                            )}
+                        </button>
+                    </form>
+
+                    <div className="mt-8 text-center">
+                        <p className="text-emerald-200">
+                            Don't have an account?{" "}
+                            <a
+                                href="/auth/sign-up"
+                                className="text-emerald-400 font-semibold hover:text-emerald-300 transition-colors"
+                            >
+                                Sign Up
+                            </a>
+                        </p>
+                    </div>
+                </div>
+
+                <p className="text-center text-emerald-300/60 text-sm mt-6">
+                    By signing in, you agree to our Terms of Service and Privacy
+                    Policy
+                </p>
+            </div>
+        </div>
     )
 }
 
