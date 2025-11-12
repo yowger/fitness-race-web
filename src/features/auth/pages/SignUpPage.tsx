@@ -9,6 +9,7 @@ const SignUpPage = () => {
     const [status, setStatus] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [formValues, setFormValues] = useState({
+        // name: "",
         email: "",
         password: "",
         confirmPassword: "",
@@ -95,6 +96,24 @@ const SignUpPage = () => {
                     </div>
 
                     <form className="space-y-5" onSubmit={handleSubmit}>
+                        {/* <div>
+                            <label
+                                htmlFor="name"
+                                className="block text-sm font-medium text-emerald-200 mb-2"
+                            >
+                                Full Name
+                            </label>
+                            <input
+                                id="name"
+                                name="name"
+                                type="text"
+                                required
+                                value={formValues.name}
+                                onChange={handleInputChange}
+                                placeholder="Your Name"
+                                className="w-full pl-4 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-emerald-300/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300"
+                            />
+                        </div> */}
                         <div>
                             <label
                                 htmlFor="email"
