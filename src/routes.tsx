@@ -5,6 +5,7 @@ import AuthRouteGuard from "./features/auth/layouts/AuthRouteGuard"
 import SignInPage from "./features/auth/pages/SignInPage"
 import SignUpPage from "./features/auth/pages/SignUpPage"
 import AuthGuestRoute from "./features/auth/layouts/AuthGuestRoute"
+import RunningLandingPage from "./features/landing/pages/LandingPage"
 
 const router = createBrowserRouter([
     {
@@ -13,7 +14,7 @@ const router = createBrowserRouter([
         children: [
             {
                 path: "/",
-                element: <p>Home</p>,
+                element: <RunningLandingPage />,
             },
             {
                 element: <AuthGuestRoute />,

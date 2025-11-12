@@ -8,6 +8,7 @@ import {
     CheckCircle2,
     Star,
 } from "lucide-react"
+import { Link } from "react-router-dom"
 
 export default function RunningLandingPage() {
     const [scrollY, setScrollY] = useState(0)
@@ -269,35 +270,37 @@ export default function RunningLandingPage() {
                         Ready to Start Your Journey?
                     </h2>
                     <p className="text-2xl text-emerald-200 mb-12">
-                        Join today and get your first month free. No credit card
-                        required.
+                        Join today and start tracking your runs for free. No
+                        sign-up fees required.
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-                        <button className="group px-10 py-5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full font-bold text-xl hover:shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-105 flex items-center gap-2">
+                        <Link
+                            to="/auth/sign-up"
+                            className="group px-10 py-5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full font-bold text-xl hover:shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-105 flex items-center gap-2 text-center"
+                        >
                             Get Started Free
                             <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-                        </button>
+                        </Link>
                     </div>
 
                     <div className="flex flex-wrap justify-center gap-6 text-sm text-emerald-200">
                         <div className="flex items-center gap-2">
                             <CheckCircle2 className="w-5 h-5 text-green-400" />
-                            No credit card required
+                            Completely Free Access
                         </div>
                         <div className="flex items-center gap-2">
                             <CheckCircle2 className="w-5 h-5 text-green-400" />
-                            Cancel anytime
+                            Track unlimited runs
                         </div>
                         <div className="flex items-center gap-2">
                             <CheckCircle2 className="w-5 h-5 text-green-400" />
-                            30-day money back guarantee
+                            Your data stays private
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Footer */}
             <div className="py-12 px-6 border-t border-white/10">
                 <div className="max-w-7xl mx-auto text-center text-emerald-300 text-sm">
                     <p>
