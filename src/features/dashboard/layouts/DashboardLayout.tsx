@@ -1,3 +1,4 @@
+import Cookies from "js-cookie"
 import { Outlet } from "react-router-dom"
 
 import { SidebarProvider } from "../../../components/ui/sidebar"
@@ -5,9 +6,11 @@ import { AppSidebar } from "../components/AppSidebar"
 import AppHeader from "../components/AppHeader"
 
 const DashboardLayout = () => {
+    const defaultOpen = Cookies.get("sidebar_state") === "true"
+
     return (
         <div className="flex min-h-screen">
-            <SidebarProvider>
+            <SidebarProvider defaultOpen={defaultOpen}>
                 <AppSidebar />
 
                 <div className="flex flex-1 flex-col">

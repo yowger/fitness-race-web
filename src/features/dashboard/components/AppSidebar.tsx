@@ -1,47 +1,43 @@
-import { Calendar, Home, Inbox, Search, Settings } from "lucide-react"
+import { Home, User, Clock, Map } from "lucide-react"
 
 import {
     Sidebar,
     SidebarContent,
-    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
-    SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
 } from "../../../components/ui/sidebar"
+import { Link, useLocation } from "react-router-dom"
 
 const items = [
     {
-        title: "Home",
-        url: "#",
+        title: "Overview",
+        url: "/dashboard",
         icon: Home,
     },
     {
-        title: "Inbox",
-        url: "#",
-        icon: Inbox,
+        title: "Profile",
+        url: "/dashboard/profile",
+        icon: User,
     },
     {
-        title: "Calendar",
-        url: "#",
-        icon: Calendar,
+        title: "Runs",
+        url: "/dashboard/runs",
+        icon: Clock,
     },
     {
-        title: "Search",
-        url: "#",
-        icon: Search,
-    },
-    {
-        title: "Settings",
-        url: "#",
-        icon: Settings,
+        title: "Routes",
+        url: "/dashboard/routes",
+        icon: Map,
     },
 ]
 
 export function AppSidebar() {
+    const location = useLocation()
+
     return (
         <Sidebar>
             <SidebarContent>
@@ -49,53 +45,28 @@ export function AppSidebar() {
                     <SidebarGroupLabel>Application</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {items.map((item) => (
-                                <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton asChild>
-                                        <a href={item.url}>
-                                            <item.icon />
-                                            <span>{item.title}</span>
-                                        </a>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
+                            {items.map((item) => {
+                                const currentPathname =
+                                    location.pathname === item.url
+
+                                return (
+                                    <SidebarMenuItem key={item.title}>
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={currentPathname}
+                                        >
+                                            <Link to={item.url}>
+                                                <item.icon />
+                                                <span>{item.title}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                )
+                            })}
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
         </Sidebar>
     )
-}
-
-{
-    /* <aside className="w-64 bg-slate-800 p-6 space-y-4">
-                    <h1 className="text-2xl font-bold">RunTrackr</h1>
-                    <nav className="space-y-2">
-                        <NavLink
-                            to="/dashboard"
-                            end
-                            className="block hover:text-emerald-400"
-                        >
-                            Overview
-                        </NavLink>
-                        <NavLink
-                            to="/dashboard/profile"
-                            className="block hover:text-emerald-400"
-                        >
-                            Profile
-                        </NavLink>
-                        <NavLink
-                            to="/dashboard/runs"
-                            className="block hover:text-emerald-400"
-                        >
-                            Runs
-                        </NavLink>
-                        <NavLink
-                            to="/dashboard/routes"
-                            className="block hover:text-emerald-400"
-                        >
-                            Routes
-                        </NavLink>
-                    </nav>
-                </aside> */
 }
