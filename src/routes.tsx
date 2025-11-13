@@ -8,6 +8,9 @@ import AuthGuestRoute from "./features/auth/layouts/AuthGuestRoute"
 import RunningLandingPage from "./features/landing/pages/LandingPage"
 import ProfilePage from "./features/profile/pages/ProfilePage"
 import DashboardLayout from "./features/dashboard/layouts/DashboardLayout"
+import RoutesPage from "./features/routes/pages/RoutesPage"
+import RoutesCreatePage from "./features/routes/pages/RoutesCreatePage"
+import RoutesDetailsPage from "./features/routes/pages/RoutesDetailsPage"
 
 const router = createBrowserRouter([
     {
@@ -34,7 +37,23 @@ const router = createBrowserRouter([
                         children: [
                             { path: "", element: <p>Dashboard Home</p> },
                             { path: "profile", element: <ProfilePage /> },
-                            { path: "routes", element: <p>Routes page</p> },
+                            {
+                                path: "routes",
+                                children: [
+                                    {
+                                        index: true,
+                                        element: <RoutesPage />,
+                                    },
+                                    {
+                                        path: "create",
+                                        element: <RoutesCreatePage />,
+                                    },
+                                    {
+                                        path: ":id",
+                                        element: <RoutesDetailsPage />,
+                                    },
+                                ],
+                            },
                             { path: "runs", element: <p>Runs page</p> },
                         ],
                     },
