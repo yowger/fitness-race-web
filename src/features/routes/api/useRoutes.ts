@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import {
+    useQuery,
+    useMutation,
+    useQueryClient,
+    useInfiniteQuery,
+} from "@tanstack/react-query"
 import { privateApi } from "../../../lib/axios"
 
 export type Position = [number, number]
@@ -19,6 +24,13 @@ export interface FeatureCollection<T = LineString> {
     features: Feature<T>[]
 }
 
+export interface UserInfo {
+    id: string
+    email?: string
+    full_name?: string
+    avatar_url?: string
+}
+
 export interface RouteResponse {
     id: string
     name: string
@@ -28,6 +40,7 @@ export interface RouteResponse {
     map_url?: string
     created_by?: string
     created_at?: string
+    users?: UserInfo
 }
 
 export interface CreateRouteInput {
@@ -38,8 +51,17 @@ export interface CreateRouteInput {
     map_url?: string
 }
 
-export const getAllRoutes = async (): Promise<RouteResponse[]> => {
-    const res = await privateApi.get("/api/routes")
+export const getAllRoutes = async ({
+    pageParam = 1,
+    limit = 20,
+}: {
+    pageParam?: number
+    limit?: number
+} = {}): Promise<RouteResponse[]> => {
+    const res = await privateApi.get("/api/routes", {
+        params: { page: pageParam, limit },
+    })
+
     return res.data
 }
 
@@ -59,12 +81,17 @@ export const deleteRoute = async (id: string): Promise<void> => {
     await privateApi.delete(`/api/routes/${id}`)
 }
 
-export const useRoutes = () => {
-    return useQuery<RouteResponse[]>({
+export const useRoutes = (limit = 20) => {
+    return useInfiniteQuery({
         queryKey: ["routes"],
-        queryFn: getAllRoutes,
+        queryFn: ({ pageParam = 1 }: { pageParam?: number }) =>
+            getAllRoutes({ pageParam, limit }),
+        getNextPageParam: (lastPage, allPages) => {
+            if (lastPage.length < limit) return undefined
+            return allPages.length + 1
+        },
+        initialPageParam: 1,
         staleTime: 1000 * 60 * 5,
-        retry: 1,
     })
 }
 
