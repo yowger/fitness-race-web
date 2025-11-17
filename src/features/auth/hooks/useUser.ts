@@ -1,0 +1,45 @@
+import { useMutation, useQuery } from "@tanstack/react-query"
+
+import { api, privateApi } from "../../../lib/axios"
+
+export interface UserResponse {
+    id: string
+    email: string
+    full_name: string
+    username?: string
+    avatar_url?: string
+}
+
+export interface CreateUserInput {
+    id: string
+    email: string
+    fullName: string
+    username?: string
+    avatar_url?: string
+}
+export const createUser = async (input: CreateUserInput) => {
+    const res = await api.post("/api/users", input)
+    return res.data
+}
+
+export const useCreateUser = () => {
+    return useMutation({
+        mutationFn: async (input: CreateUserInput) => {
+            return await createUser(input)
+        },
+    })
+}
+
+export const getUser = async () => {
+    const res = await privateApi.get("/api/users/me")
+    return res.data as UserResponse
+}
+
+export const useUser = () => {
+    return useQuery<UserResponse>({
+        queryKey: ["currentUser"],
+        queryFn: getUser,
+        staleTime: 1000 * 60 * 5,
+        retry: 1,
+    })
+}

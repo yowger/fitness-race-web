@@ -1,6 +1,11 @@
 import { Link } from "react-router-dom"
 
+import { useSession } from "../../auth/hooks/useSession"
+
 const RoutesPage = () => {
+    const { user } = useSession()
+    console.log("🚀 ~ RoutesPage ~ user:", user)
+
     return (
         <div className="p-6">
             <h1 className="text-2xl font-bold mb-4">Routes</h1>

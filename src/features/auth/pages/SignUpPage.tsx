@@ -3,13 +3,17 @@ import { ArrowLeft, Mail, Lock, Loader2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import { supabase } from "../../../lib/supabase"
+import { useCreateUser } from "../hooks/useUser"
+import { toast } from "sonner"
 
 const SignUpPage = () => {
     const navigate = useNavigate()
+    const { mutateAsync: createUser } = useCreateUser()
+
     const [status, setStatus] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [formValues, setFormValues] = useState({
-        // name: "",
+        name: "",
         email: "",
         password: "",
         confirmPassword: "",
@@ -23,31 +27,61 @@ const SignUpPage = () => {
         e.preventDefault()
 
         if (formValues.password !== formValues.confirmPassword) {
-            alert("Passwords do not match!")
+            toast.error("Passwords do not match!")
             return
         }
 
         if (formValues.password.length < 6) {
-            alert("Password must be at least 6 characters long")
+            toast.error("Password must be at least 6 characters long")
             return
         }
 
         setIsLoading(true)
         setStatus("Creating account...")
 
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
             email: formValues.email,
             password: formValues.password,
         })
 
+        if (error) {
+            setIsLoading(false)
+            setStatus("")
+            toast.error(error.message)
+            return
+        }
+
+        const authUser = data.user
+        if (!authUser) {
+            setIsLoading(false)
+            setStatus("")
+            toast.error("Failed to get created user")
+            return
+        }
+
+        try {
+            await createUser({
+                id: authUser.id,
+                email: formValues.email,
+                fullName: formValues.name,
+            })
+        } catch (err) {
+            setIsLoading(false)
+            setStatus("")
+
+            if (err instanceof Error) {
+                toast.error(err?.message || "Failed to create user profile")
+            }
+
+            return
+        }
+
         setIsLoading(false)
         setStatus("")
 
-        if (error) {
-            alert(error.message)
-        } else {
-            navigate("/dashboard", { replace: true })
-        }
+        toast.success("Account created successfully!")
+
+        navigate("/dashboard", { replace: true })
     }
 
     return (
@@ -96,7 +130,7 @@ const SignUpPage = () => {
                     </div>
 
                     <form className="space-y-5" onSubmit={handleSubmit}>
-                        {/* <div>
+                        <div>
                             <label
                                 htmlFor="name"
                                 className="block text-sm font-medium text-emerald-200 mb-2"
@@ -113,7 +147,7 @@ const SignUpPage = () => {
                                 placeholder="Your Name"
                                 className="w-full pl-4 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-emerald-300/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300"
                             />
-                        </div> */}
+                        </div>
                         <div>
                             <label
                                 htmlFor="email"

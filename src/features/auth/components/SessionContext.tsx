@@ -1,35 +1,44 @@
 import { createContext, useEffect, useState } from "react"
 import { type Session } from "@supabase/supabase-js"
-
 import { supabase } from "../../../lib/supabase"
+import { useUser, type UserResponse } from "../hooks/useUser"
 
-const SessionContext = createContext<{
+interface SessionContextType {
     session: Session | null
-}>({
+    user: UserResponse | null
+    isLoading: boolean
+}
+
+const SessionContext = createContext<SessionContextType>({
     session: null,
+    user: null,
+    isLoading: true,
 })
 
 type Props = { children: React.ReactNode }
 
 export const SessionProvider = ({ children }: Props) => {
     const [session, setSession] = useState<Session | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
+    const { data: user, isLoading: isUserLoading } = useUser()
 
     useEffect(() => {
         const authStateListener = supabase.auth.onAuthStateChange(
-            async (_, session) => {
-                setSession(session)
-                setIsLoading(false)
+            (_, newSession) => {
+                setSession(newSession)
             }
         )
 
         return () => {
             authStateListener.data.subscription.unsubscribe()
         }
-    }, [supabase])
+    }, [])
+
+    const isLoading = isUserLoading || !session
 
     return (
-        <SessionContext.Provider value={{ session }}>
+        <SessionContext.Provider
+            value={{ session, user: user || null, isLoading }}
+        >
             {isLoading ? <p>Loading...</p> : children}
         </SessionContext.Provider>
     )

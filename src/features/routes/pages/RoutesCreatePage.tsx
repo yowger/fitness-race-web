@@ -82,6 +82,7 @@ const CreateRoutesPage = () => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ points: routePoints }),
             })
+            
             if (!res.ok) throw new Error("Failed to save route")
             toast.success("Route saved!")
             setRoutePoints([])
