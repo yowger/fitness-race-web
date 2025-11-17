@@ -1,13 +1,5 @@
-import React from "react"
 import { useParams, Link } from "react-router-dom"
-import {
-    MapPin,
-    Calendar,
-    Ruler,
-    ArrowLeft,
-    User,
-    Navigation,
-} from "lucide-react"
+import { Calendar, ArrowLeft } from "lucide-react"
 import { useRoute } from "../api/useRoutes"
 import Map, { Source, Layer } from "@vis.gl/react-maplibre"
 
