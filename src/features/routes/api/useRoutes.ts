@@ -25,6 +25,7 @@ export interface RouteResponse {
     description?: string
     distance?: number
     geojson: FeatureCollection<LineString>
+    map_url?: string
     created_by?: string
     created_at?: string
 }
@@ -34,6 +35,7 @@ export interface CreateRouteInput {
     description?: string
     distance?: number
     geojson: FeatureCollection<LineString>
+    map_url?: string
 }
 
 export const getAllRoutes = async (): Promise<RouteResponse[]> => {

@@ -8,7 +8,7 @@ import "maplibre-gl/dist/maplibre-gl.css"
 import { useState } from "react"
 import { toast } from "sonner"
 
-import { useSnapRoute } from "../api/useSnapRoute"
+import { useGeoapifyStaticMap, useSnapRoute } from "../api/useGeoapify"
 import type { LatLng } from "../types/routesTypes"
 
 import {
@@ -24,6 +24,7 @@ import {
     type FeatureCollection,
     type LineString,
 } from "../api/useRoutes"
+import { useNavigate } from "react-router-dom"
 
 const MAP_STYLE =
     "https://api.maptiler.com/maps/streets-v4/style.json?key=l60bj9KIXXKDXbsOvzuz"
@@ -41,6 +42,8 @@ function formatWaypoints(points: LatLng[]) {
 
 const CreateRoutesPage = () => {
     const createRouteMutation = useCreateRoute()
+    const geoapifyStaticMap = useGeoapifyStaticMap()
+    const navigate = useNavigate()
 
     const [routePoints, setRoutePoints] = useState<
         { lng: number; lat: number }[]
@@ -84,6 +87,8 @@ const CreateRoutesPage = () => {
             return
         }
 
+        const mapUrl = await geoapifyStaticMap.mutateAsync(routePoints)
+
         try {
             const geojson: FeatureCollection<LineString> = {
                 type: "FeatureCollection",
@@ -93,10 +98,13 @@ const CreateRoutesPage = () => {
             await createRouteMutation.mutateAsync({
                 name: routeName,
                 distance: getRouteDistance(routePoints),
+                map_url: mapUrl,
                 geojson,
             })
 
             toast.success("Route saved!")
+
+            navigate("/dashboard/routes")
             setRoutePoints([])
             setRouteName("")
         } catch {
@@ -232,12 +240,22 @@ const CreateRoutesPage = () => {
                                 onClick={handleSaveRoute}
                                 disabled={
                                     !routeName.trim() ||
-                                    routePoints.length === 0
+                                    routePoints.length === 0 ||
+                                    createRouteMutation.isPending ||
+                                    geoapifyStaticMap.isPending
                                 }
                                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-lg"
                             >
-                                <Save className="w-5 h-5" />
-                                Save Route
+                                {createRouteMutation.isPending ||
+                                geoapifyStaticMap.isPending ? (
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    <Save className="w-5 h-5" />
+                                )}
+                                {createRouteMutation.isPending ||
+                                geoapifyStaticMap.isPending
+                                    ? "Saving..."
+                                    : "Save Route"}
                             </button>
 
                             <button
