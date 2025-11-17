@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom"
 import { LogOut, User, Mail, Shield, Settings } from "lucide-react"
+
 import { useSession } from "../../auth/hooks/useSession"
 import { supabase } from "../../../lib/supabase"
 import {
@@ -39,7 +40,6 @@ const ProfilePage = () => {
 
     return (
         <div className="p-6 max-w-2xl mx-auto space-y-6">
-            {/* Profile Card */}
             <Card className="bg-white/5 border border-white/10 rounded-3xl">
                 <CardHeader>
                     <h1 className="text-2xl font-semibold">Profile</h1>
@@ -50,7 +50,7 @@ const ProfilePage = () => {
 
                 <CardContent className="space-y-6">
                     <div className="flex items-center gap-6">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-semibold shadow-md">
+                        <div className="w-20 h-20 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-semibold shadow-md">
                             {getInitials(user.full_name)}
                         </div>
                         <div>
@@ -93,7 +93,6 @@ const ProfilePage = () => {
                     </div>
                 </CardContent>
 
-                {/* Quick Actions */}
                 <CardContent className="space-y-2">
                     <Button
                         variant="outline"

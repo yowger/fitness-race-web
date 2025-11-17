@@ -18,6 +18,12 @@ import {
 } from "../../../components/ui/resizable"
 import { Save, Trash2, Undo } from "lucide-react"
 import { getRouteDistance } from "../utils"
+import {
+    useCreateRoute,
+    type Feature,
+    type FeatureCollection,
+    type LineString,
+} from "../api/useRoutes"
 
 const MAP_STYLE =
     "https://api.maptiler.com/maps/streets-v4/style.json?key=l60bj9KIXXKDXbsOvzuz"
@@ -34,6 +40,8 @@ function formatWaypoints(points: LatLng[]) {
 }
 
 const CreateRoutesPage = () => {
+    const createRouteMutation = useCreateRoute()
+
     const [routePoints, setRoutePoints] = useState<
         { lng: number; lat: number }[]
     >([])
@@ -77,15 +85,20 @@ const CreateRoutesPage = () => {
         }
 
         try {
-            const res = await fetch("/api/routes", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ points: routePoints }),
+            const geojson: FeatureCollection<LineString> = {
+                type: "FeatureCollection",
+                features: [lineData as Feature<LineString>],
+            }
+
+            await createRouteMutation.mutateAsync({
+                name: routeName,
+                distance: getRouteDistance(routePoints),
+                geojson,
             })
-            
-            if (!res.ok) throw new Error("Failed to save route")
+
             toast.success("Route saved!")
             setRoutePoints([])
+            setRouteName("")
         } catch {
             toast.error("Failed to save route")
         }
