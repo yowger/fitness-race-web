@@ -11,6 +11,10 @@ import DashboardLayout from "./features/dashboard/layouts/DashboardLayout"
 import RoutesPage from "./features/routes/pages/RoutesPage"
 import RoutesCreatePage from "./features/routes/pages/RoutesCreatePage"
 import RoutesDetailsPage from "./features/routes/pages/RoutesDetailsPage"
+import RacesPage from "./features/races/RacesPage"
+import RacesDetailPage from "./features/races/RacesDetailPage"
+import RacesResultsPage from "./features/races/RacesResultsPage"
+import RacesLivePage from "./features/races/RacesLivePage"
 
 const router = createBrowserRouter([
     {
@@ -54,7 +58,27 @@ const router = createBrowserRouter([
                                     },
                                 ],
                             },
-                            { path: "runs", element: <p>Runs page</p> },
+                            {
+                                path: "races",
+                                children: [
+                                    {
+                                        index: true,
+                                        element: <RacesPage />,
+                                    },
+                                    {
+                                        path: ":id",
+                                        element: <RacesDetailPage />,
+                                    },
+                                    {
+                                        path: ":id/live",
+                                        element: <RacesLivePage />,
+                                    },
+                                    {
+                                        path: ":id/results",
+                                        element: <RacesResultsPage />,
+                                    },
+                                ],
+                            },
                         ],
                     },
                 ],

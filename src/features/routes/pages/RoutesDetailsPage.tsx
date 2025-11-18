@@ -163,6 +163,15 @@ const RouteDetailsPage = () => {
                             </h3>
 
                             <div className="space-y-4">
+                                <div className="flex items-center justify-between p-3 rounded-xl bg-yellow-50">
+                                    <span className="text-sm text-yellow-900 font-medium">
+                                        Route ID
+                                    </span>
+                                    <span className="text-lg font-semibold text-yellow-900">
+                                        {route.id}
+                                    </span>
+                                </div>
+
                                 <div className="flex items-center justify-between p-3 rounded-xl bg-blue-50">
                                     <span className="text-sm text-blue-900 font-medium">
                                         Distance
