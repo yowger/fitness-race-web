@@ -11,10 +11,11 @@ import DashboardLayout from "./features/dashboard/layouts/DashboardLayout"
 import RoutesPage from "./features/routes/pages/RoutesPage"
 import RoutesCreatePage from "./features/routes/pages/RoutesCreatePage"
 import RoutesDetailsPage from "./features/routes/pages/RoutesDetailsPage"
-import RacesPage from "./features/races/RacesPage"
-import RacesDetailPage from "./features/races/RacesDetailPage"
-import RacesResultsPage from "./features/races/RacesResultsPage"
-import RacesLivePage from "./features/races/RacesLivePage"
+import RacesPage from "./features/races/pages/RacesPage"
+import RacesDetailPage from "./features/races/pages/RacesDetailPage"
+import RacesResultsPage from "./features/races/pages/RacesResultsPage"
+import RacesLivePage from "./features/races/pages/RacesLivePage"
+import RaceCreatePage from "./features/races/pages/RacesFormPage"
 
 const router = createBrowserRouter([
     {
@@ -64,6 +65,10 @@ const router = createBrowserRouter([
                                     {
                                         index: true,
                                         element: <RacesPage />,
+                                    },
+                                    {
+                                        path: "create",
+                                        element: <RaceCreatePage />,
                                     },
                                     {
                                         path: ":id",
