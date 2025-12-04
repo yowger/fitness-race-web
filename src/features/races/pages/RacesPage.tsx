@@ -115,7 +115,7 @@ function RaceCard({ race }: { race: Race }) {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-500">
+                    <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-emerald-500 to-teal-500">
                         <MapPin className="w-16 h-16 text-white/50" />
                     </div>
                 )}
@@ -129,7 +129,7 @@ function RaceCard({ race }: { race: Race }) {
                 </div>
 
                 {race.routes?.name && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+                    <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/60 to-transparent p-3">
                         <div className="flex items-center gap-2 text-white text-sm">
                             <MapPin className="w-4 h-4" />
                             <span className="font-medium">
@@ -186,7 +186,7 @@ function RaceCard({ race }: { race: Race }) {
                     />
                 </div>
 
-                <Link to={`/races/${race.id}`}>
+                <Link to={`/dashboard/races/${race.id}`}>
                     <button className="w-full flex items-center justify-center gap-2 py-2.5 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition text-sm font-medium">
                         View Details
                         <ChevronRight className="w-4 h-4" />
