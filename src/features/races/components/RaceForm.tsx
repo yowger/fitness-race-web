@@ -11,10 +11,12 @@ import {
     FormMessage,
 } from "../../../components/ui/form"
 import { Input } from "../../../components/ui/input"
+import { Textarea } from "../../../components/ui/textarea"
 import { MapPin } from "lucide-react"
 
 const raceFormSchema = z.object({
     name: z.string().min(1, "Race name is required"),
+    description: z.string().optional(),
     maxParticipants: z.string(),
     startTime: z.string().optional(),
 })
@@ -39,6 +41,7 @@ export function RaceForm({
         resolver: zodResolver(raceFormSchema),
         defaultValues: {
             name: "",
+            description: "",
             maxParticipants: "0",
             startTime: "",
         },
@@ -64,6 +67,23 @@ export function RaceForm({
                             <FormControl>
                                 <Input
                                     placeholder="Ex: Sunday Fun Run"
+                                    {...field}
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                        <FormItem className="space-y-2">
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                                <Textarea
+                                    placeholder="Optional description"
                                     {...field}
                                 />
                             </FormControl>
@@ -122,7 +142,7 @@ export function RaceForm({
                     name="maxParticipants"
                     render={({ field }) => (
                         <FormItem className="space-y-2">
-                            <FormLabel>Max Participants (optional)</FormLabel>
+                            <FormLabel>Max Participants</FormLabel>
                             <FormControl>
                                 <Input
                                     type="number"
@@ -141,7 +161,7 @@ export function RaceForm({
                     name="startTime"
                     render={({ field }) => (
                         <FormItem className="space-y-2">
-                            <FormLabel>Start Time (optional)</FormLabel>
+                            <FormLabel>Start Time</FormLabel>
                             <FormControl>
                                 <Input type="datetime-local" {...field} />
                             </FormControl>

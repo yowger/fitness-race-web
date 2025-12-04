@@ -13,6 +13,10 @@ import {
 } from "../../../components/ui/sheet"
 import { useRoutes } from "../../routes/api/useRoutes"
 
+import { toast } from "sonner"
+import { useCreateRace } from "../hooks/useRaces"
+import { useNavigate } from "react-router-dom"
+
 const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString("en-US", {
@@ -35,8 +39,11 @@ const getInitials = (name: string) =>
         .slice(0, 2) ?? "U"
 
 export default function RaceCreatePage() {
+    const navigate = useNavigate()
+
     const [sheetOpen, setSheetOpen] = useState(false)
     const [selectedRouteId, setSelectedRouteId] = useState<string>("")
+    const createRaceMutation = useCreateRace()
 
     const {
         data,
@@ -48,11 +55,28 @@ export default function RaceCreatePage() {
     } = useRoutes(20)
 
     const routes = data?.pages.flat() ?? []
-
     const selectedRoute = routes.find((r) => r.id === selectedRouteId)
 
     const handleCreate = (values: RaceFormValues & { routeId: string }) => {
-        console.log("Create race payload:", values)
+        createRaceMutation.mutate(
+            {
+                name: values.name,
+                max_participants: Number(values.maxParticipants || 0),
+                start_time: values.startTime || new Date().toISOString(),
+                route_id: values.routeId,
+            },
+            {
+                onSuccess: () => {
+                    setSelectedRouteId("")
+                    toast.success("Race created successfully.")
+
+                    navigate("/dashboard/races")
+                },
+                onError: () => {
+                    toast.error("Failed to create race.")
+                },
+            }
+        )
     }
 
     if (isLoading) {
@@ -210,7 +234,7 @@ export default function RaceCreatePage() {
                             : null
                     }
                     setRouteId={setSelectedRouteId}
-                    onSubmit={(values) => handleCreate(values)}
+                    onSubmit={handleCreate}
                 />
             </div>
         </div>
