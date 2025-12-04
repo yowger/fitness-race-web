@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom"
 import { Calendar, ArrowLeft } from "lucide-react"
-import { useRoute } from "../api/useRoutes"
 import Map, { Source, Layer } from "@vis.gl/react-maplibre"
+import { useRoute } from "../api/useRoutes"
 
 const MAP_STYLE =
     "https://api.maptiler.com/maps/streets-v4/style.json?key=l60bj9KIXXKDXbsOvzuz"
@@ -54,13 +54,16 @@ const RouteDetailsPage = () => {
     }
 
     const firstCoord: [number, number] = flatCoords[0] ?? [0, 0]
+    const lastCoord: [number, number] = flatCoords[flatCoords.length - 1] ?? [
+        0, 0,
+    ]
 
     const lineData = {
         type: "Feature",
         properties: {},
         geometry: {
             type: "LineString",
-            coordinates: route.geojson.features?.[0]?.geometry?.coordinates,
+            coordinates: flatCoords,
         },
     } as const
 
@@ -79,14 +82,14 @@ const RouteDetailsPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2">
                         <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-200 sticky top-24">
-                            <div className="relative">
+                            <div className="relative h-96 lg:h-[500px]">
                                 <Map
-                                    style={{ width: "100%", height: "500px" }}
+                                    style={{ width: "100%", height: "100%" }}
                                     mapStyle={MAP_STYLE}
                                     attributionControl={false}
                                     initialViewState={{
-                                        latitude: firstCoord[1] as number,
-                                        longitude: firstCoord[0] as number,
+                                        latitude: firstCoord[1],
+                                        longitude: firstCoord[0],
                                         zoom: 13.5,
                                     }}
                                 >
@@ -104,6 +107,56 @@ const RouteDetailsPage = () => {
                                             }}
                                         />
                                     </Source>
+
+                                    <Source
+                                        id="start-point"
+                                        type="geojson"
+                                        data={{
+                                            type: "Feature",
+                                            geometry: {
+                                                type: "Point",
+                                                coordinates: firstCoord,
+                                            },
+                                            properties: {},
+                                        }}
+                                    >
+                                        <Layer
+                                            id="start-circle"
+                                            type="circle"
+                                            paint={{
+                                                "circle-radius": 8,
+                                                "circle-color": "#10B981",
+                                                "circle-stroke-width": 2,
+                                                "circle-stroke-color":
+                                                    "#ffffff",
+                                            }}
+                                        />
+                                    </Source>
+
+                                    <Source
+                                        id="end-point"
+                                        type="geojson"
+                                        data={{
+                                            type: "Feature",
+                                            geometry: {
+                                                type: "Point",
+                                                coordinates: lastCoord,
+                                            },
+                                            properties: {},
+                                        }}
+                                    >
+                                        <Layer
+                                            id="end-circle"
+                                            type="circle"
+                                            paint={{
+                                                "circle-radius": 8,
+                                                "circle-color": "#EF4444",
+                                                "circle-stroke-width": 2,
+                                                "circle-stroke-color":
+                                                    "#ffffff",
+                                            }}
+                                        />
+                                    </Source>
                                 </Map>
                             </div>
                         </div>
@@ -114,9 +167,8 @@ const RouteDetailsPage = () => {
                             <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">
                                 Created By
                             </h3>
-
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-semibold flex-shrink-0">
+                                <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-semibold shrink-0">
                                     {route.users?.avatar_url ? (
                                         <img
                                             src={route.users.avatar_url}
@@ -161,7 +213,6 @@ const RouteDetailsPage = () => {
                             <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">
                                 Route Info
                             </h3>
-
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between p-3 rounded-xl bg-yellow-50">
                                     <span className="text-sm text-yellow-900 font-medium">
@@ -186,7 +237,7 @@ const RouteDetailsPage = () => {
                                         Est. Duration
                                     </span>
                                     <span className="text-lg font-semibold text-purple-900">
-                                        {Math.ceil((route.distance ?? 0) * 15)}
+                                        {Math.ceil((route.distance ?? 0) * 15)}{" "}
                                         min
                                     </span>
                                 </div>
@@ -197,6 +248,26 @@ const RouteDetailsPage = () => {
                                     </span>
                                     <span className="text-lg font-semibold text-green-900">
                                         {Math.ceil((route.distance ?? 0) * 3)}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center justify-between p-3 rounded-xl bg-teal-50">
+                                    <span className="text-sm text-teal-900 font-medium">
+                                        Start Coord
+                                    </span>
+                                    <span className="text-lg font-semibold text-teal-900">
+                                        [{firstCoord[0].toFixed(5)},{" "}
+                                        {firstCoord[1].toFixed(5)}]
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center justify-between p-3 rounded-xl bg-red-50">
+                                    <span className="text-sm text-red-900 font-medium">
+                                        End Coord
+                                    </span>
+                                    <span className="text-lg font-semibold text-red-900">
+                                        [{lastCoord[0].toFixed(5)},{" "}
+                                        {lastCoord[1].toFixed(5)}]
                                     </span>
                                 </div>
                             </div>

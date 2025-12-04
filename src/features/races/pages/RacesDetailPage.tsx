@@ -47,14 +47,16 @@ const RaceDetailPage = () => {
     }
 
     const firstCoord: [number, number] = flatCoords[0] ?? [0, 0]
+    const lastCoord: [number, number] = flatCoords[flatCoords.length - 1] ?? [
+        0, 0,
+    ]
 
     const lineData = {
         type: "Feature",
         properties: {},
         geometry: {
             type: "LineString",
-            coordinates:
-                race.routes?.geojson.features?.[0]?.geometry?.coordinates ?? [],
+            coordinates: flatCoords,
         },
     } as const
 
@@ -85,7 +87,7 @@ const RaceDetailPage = () => {
                                         initialViewState={{
                                             latitude: firstCoord[1],
                                             longitude: firstCoord[0],
-                                            zoom: 13,
+                                            zoom: 14,
                                         }}
                                     >
                                         <Source
@@ -99,6 +101,56 @@ const RaceDetailPage = () => {
                                                 paint={{
                                                     "line-color": "#2563EB",
                                                     "line-width": 4,
+                                                }}
+                                            />
+                                        </Source>
+
+                                        <Source
+                                            id="start-point"
+                                            type="geojson"
+                                            data={{
+                                                type: "Feature",
+                                                geometry: {
+                                                    type: "Point",
+                                                    coordinates: firstCoord,
+                                                },
+                                                properties: {},
+                                            }}
+                                        >
+                                            <Layer
+                                                id="start-circle"
+                                                type="circle"
+                                                paint={{
+                                                    "circle-radius": 8,
+                                                    "circle-color": "#10B981",
+                                                    "circle-stroke-width": 2,
+                                                    "circle-stroke-color":
+                                                        "#ffffff",
+                                                }}
+                                            />
+                                        </Source>
+
+                                        <Source
+                                            id="end-point"
+                                            type="geojson"
+                                            data={{
+                                                type: "Feature",
+                                                geometry: {
+                                                    type: "Point",
+                                                    coordinates: lastCoord,
+                                                },
+                                                properties: {},
+                                            }}
+                                        >
+                                            <Layer
+                                                id="end-circle"
+                                                type="circle"
+                                                paint={{
+                                                    "circle-radius": 8,
+                                                    "circle-color": "#EF4444",
+                                                    "circle-stroke-width": 2,
+                                                    "circle-stroke-color":
+                                                        "#ffffff",
                                                 }}
                                             />
                                         </Source>
@@ -117,7 +169,6 @@ const RaceDetailPage = () => {
                             <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">
                                 Race Info
                             </h3>
-
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between p-3 rounded-xl bg-blue-50">
                                     <span className="text-sm text-blue-900 font-medium">
@@ -162,9 +213,10 @@ const RaceDetailPage = () => {
                                 {race.max_participants && (
                                     <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50">
                                         <span className="text-sm text-purple-900 font-medium">
-                                            Max Participants
+                                            Participants
                                         </span>
                                         <span className="text-lg font-semibold text-purple-900">
+                                            {race.participants?.length ?? 0} /{" "}
                                             {race.max_participants}
                                         </span>
                                     </div>
