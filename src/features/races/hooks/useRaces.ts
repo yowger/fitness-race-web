@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 import { privateApi } from "../../../lib/axios"
-import type { FeatureCollection, LineString } from "../../routes/api/useRoutes"
+import type { RouteResponse } from "../../routes/api/useRoutes"
 
 export interface UserInfo {
     id: string
@@ -22,12 +22,7 @@ export interface Race {
     status: string
     created_at?: string
     updated_at?: string
-    route?: {
-        id: string
-        name: string
-        distance?: number
-        geojson?: FeatureCollection<LineString>
-    }
+    routes?: RouteResponse
     participants?: UserInfo[]
 }
 
@@ -58,8 +53,15 @@ export interface Result {
     user?: UserInfo
 }
 
-export const getAllRaces = async (): Promise<Race[]> => {
-    const res = await privateApi.get("/api/group-races")
+export interface RaceFilters {
+    name?: string
+    status?: "upcoming" | "ongoing" | "finished"
+    startDate?: string
+    endDate?: string
+}
+
+export const getAllRaces = async (filters?: RaceFilters): Promise<Race[]> => {
+    const res = await privateApi.get("/api/group-races", { params: filters })
     return res.data
 }
 
@@ -125,10 +127,10 @@ export const getResultsByRace = async (raceId: string): Promise<Result[]> => {
     return res.data
 }
 
-export const useRaces = () =>
+export const useRaces = (filters?: RaceFilters) =>
     useQuery({
-        queryKey: ["races"],
-        queryFn: getAllRaces,
+        queryKey: ["races", filters],
+        queryFn: () => getAllRaces(filters),
         staleTime: 1000 * 60 * 5,
     })
 
