@@ -248,6 +248,31 @@ function RaceCard({ race }: { race: Race }) {
                         </div>
                     )}
 
+                    <div className="space-y-2 mt-2">
+                        {race.routes?.start_address && (
+                            <div
+                                className="flex items-center gap-2 text-sm text-gray-700 cursor-default"
+                                title={race.routes.start_address}
+                            >
+                                <MapPin className="w-4 h-4 text-green-500" />
+                                <span className="truncate">
+                                    {race.routes.start_address}
+                                </span>
+                            </div>
+                        )}
+                        {race.routes?.end_address && (
+                            <div
+                                className="flex items-center gap-2 text-sm text-gray-700 cursor-default"
+                                title={race.routes.end_address}
+                            >
+                                <MapPin className="w-4 h-4 text-red-500" />
+                                <span className="truncate">
+                                    {race.routes.end_address}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
                     <div className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2 text-gray-700">
