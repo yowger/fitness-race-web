@@ -48,6 +48,8 @@ export interface CreateRouteInput {
     description?: string
     distance?: number
     geojson: FeatureCollection<LineString>
+    start_address?: string
+    end_address?: string
     map_url?: string
 }
 

@@ -8,7 +8,11 @@ import "maplibre-gl/dist/maplibre-gl.css"
 import { useState } from "react"
 import { toast } from "sonner"
 
-import { useGeoapifyStaticMap, useSnapRoute } from "../api/useGeoapify"
+import {
+    useGeoapifyStaticMap,
+    useReverseGeocode,
+    useSnapRoute,
+} from "../api/useGeoapify"
 import type { LatLng } from "../types/routesTypes"
 
 import {
@@ -16,7 +20,7 @@ import {
     ResizablePanel,
     ResizablePanelGroup,
 } from "../../../components/ui/resizable"
-import { Save, Trash2, Undo } from "lucide-react"
+import { MapIcon, Save, Trash2, Undo } from "lucide-react"
 import { getRouteDistance } from "../utils"
 import {
     useCreateRoute,
@@ -43,13 +47,14 @@ function formatWaypoints(points: LatLng[]) {
 const CreateRoutesPage = () => {
     const createRouteMutation = useCreateRoute()
     const geoapifyStaticMap = useGeoapifyStaticMap()
+    const snapRouteMutation = useSnapRoute()
     const navigate = useNavigate()
 
-    const [routePoints, setRoutePoints] = useState<
-        { lng: number; lat: number }[]
-    >([])
+    const [routePoints, setRoutePoints] = useState<LatLng[]>([])
     const [routeName, setRouteName] = useState("")
-    const snapRouteMutation = useSnapRoute()
+    const [startAddress, setStartAddress] = useState("")
+    const [endAddress, setEndAddress] = useState("")
+    const reverseGeocodeMutation = useReverseGeocode()
 
     const handleMapClick = (event: MapLayerMouseEvent) => {
         const { lng, lat } = event.lngLat
@@ -69,6 +74,38 @@ const CreateRoutesPage = () => {
             setRoutePoints(snappedPoints)
         } catch {
             toast.error("Failed to snap route")
+        }
+    }
+
+    const fetchStartAddress = async () => {
+        console.log("nice")
+        if (!routePoints.length) return
+        console.log("nice 2")
+        try {
+            const address = await reverseGeocodeMutation.mutateAsync(
+                routePoints[0]
+            )
+
+            if (!address) return
+
+            setStartAddress(address)
+        } catch {
+            toast.error("Failed to fetch starting address")
+        }
+    }
+
+    const fetchEndAddress = async () => {
+        if (!routePoints.length) return
+        try {
+            const address = await reverseGeocodeMutation.mutateAsync(
+                routePoints[routePoints.length - 1]
+            )
+
+            if (!address) return
+
+            setEndAddress(address)
+        } catch {
+            toast.error("Failed to fetch ending address")
         }
     }
 
@@ -100,13 +137,16 @@ const CreateRoutesPage = () => {
                 distance: getRouteDistance(routePoints),
                 map_url: mapUrl,
                 geojson,
+                start_address: startAddress,
+                end_address: endAddress,
             })
 
             toast.success("Route saved!")
-
             navigate("/dashboard/routes")
             setRoutePoints([])
             setRouteName("")
+            setStartAddress("")
+            setEndAddress("")
         } catch {
             toast.error("Failed to save route")
         }
@@ -205,6 +245,54 @@ const CreateRoutesPage = () => {
                                 placeholder="Enter route name..."
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
                             />
+                        </div>
+
+                        <div className="bg-white rounded-lg p-3 shadow-sm border border-slate-200">
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                Starting Address
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Enter starting address"
+                                    value={startAddress}
+                                    onChange={(e) =>
+                                        setStartAddress(e.target.value)
+                                    }
+                                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={fetchStartAddress}
+                                    className="shrink-0 w-10 h-10 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+                                >
+                                    <MapIcon className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-3 shadow-sm border border-slate-200">
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                Ending Address
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Enter ending address"
+                                    value={endAddress}
+                                    onChange={(e) =>
+                                        setEndAddress(e.target.value)
+                                    }
+                                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={fetchEndAddress}
+                                    className="shrink-0 w-10 h-10 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+                                >
+                                    <MapIcon className="w-5 h-5" />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">

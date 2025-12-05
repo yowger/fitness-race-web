@@ -140,3 +140,43 @@ export function useGeoapifyStaticMap() {
         mutationFn: fetchStaticMapUrl,
     })
 }
+
+async function reverseGeocode({ lat, lng }: { lat: number; lng: number }) {
+    try {
+        const { data } = await axios.get(`${GEOAPIFY_URL}/v1/geocode/reverse`, {
+            params: {
+                lat,
+                lon: lng,
+                format: "json",
+                apiKey: GEOAPIFY_KEY,
+            },
+        })
+
+        if (data?.results?.length) {
+            const r = data.results[0]
+
+            const parts = [
+                r.name,
+                r.street,
+                r.suburb,
+                r.city,
+                r.postcode,
+                r.country,
+            ].filter(Boolean)
+
+            return parts.join(", ")
+        }
+
+        return ""
+    } catch (err) {
+        if (err instanceof Error) {
+            throw new Error("Failed to fetch address")
+        }
+    }
+}
+
+export function useReverseGeocode() {
+    return useMutation({
+        mutationFn: reverseGeocode,
+    })
+}
