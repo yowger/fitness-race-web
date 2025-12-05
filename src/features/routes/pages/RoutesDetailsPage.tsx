@@ -210,64 +210,53 @@ const RouteDetailsPage = () => {
                         </div>
 
                         <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
-                            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">
-                                Route Info
+                            <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-5">
+                                Route Information
                             </h3>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between p-3 rounded-xl bg-yellow-50">
-                                    <span className="text-sm text-yellow-900 font-medium">
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between py-3 border-b border-slate-100">
+                                    <span className="text-sm text-slate-600 font-medium">
                                         Route ID
                                     </span>
-                                    <span className="text-lg font-semibold text-yellow-900">
+                                    <span className="text-sm font-semibold text-slate-900">
                                         {route.id}
                                     </span>
                                 </div>
 
-                                <div className="flex items-center justify-between p-3 rounded-xl bg-blue-50">
-                                    <span className="text-sm text-blue-900 font-medium">
+                                <div className="flex items-center justify-between py-3 border-b border-slate-100">
+                                    <span className="text-sm text-slate-600 font-medium">
                                         Distance
                                     </span>
-                                    <span className="text-lg font-semibold text-blue-900">
+                                    <span className="text-sm font-semibold text-slate-900">
                                         {route.distance?.toFixed(2)} km
                                     </span>
                                 </div>
 
-                                <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50">
-                                    <span className="text-sm text-purple-900 font-medium">
+                                <div className="flex items-center justify-between py-3 border-b border-slate-100">
+                                    <span className="text-sm text-slate-600 font-medium">
                                         Est. Duration
                                     </span>
-                                    <span className="text-lg font-semibold text-purple-900">
+                                    <span className="text-sm font-semibold text-slate-900">
                                         {Math.ceil((route.distance ?? 0) * 15)}{" "}
                                         min
                                     </span>
                                 </div>
 
-                                <div className="flex items-center justify-between p-3 rounded-xl bg-green-50">
-                                    <span className="text-sm text-green-900 font-medium">
-                                        Checkpoints
+                                <div className="flex items-center justify-between py-3 border-b border-slate-100 gap-2">
+                                    <span className="text-sm text-slate-600 font-medium">
+                                        Start Address
                                     </span>
-                                    <span className="text-lg font-semibold text-green-900">
-                                        {Math.ceil((route.distance ?? 0) * 3)}
-                                    </span>
-                                </div>
-
-                                <div className="flex items-center justify-between p-3 rounded-xl bg-teal-50">
-                                    <span className="text-sm text-teal-900 font-medium">
-                                        Start Coord
-                                    </span>
-                                    <span className="text-lg font-semibold text-teal-900">
-                                        [{firstCoord[0].toFixed(5)},{" "}
-                                        {firstCoord[1].toFixed(5)}]
+                                    <span className="text-right text-sm font-semibold text-slate-900">
+                                        {route.start_address || "Unknown"}
                                     </span>
                                 </div>
 
-                                <div className="flex items-center justify-between p-3 rounded-xl bg-red-50">
-                                    <span className="text-sm text-red-900 font-medium">
-                                        End Coord
+                                <div className="flex items-center justify-between py-3 gap-2">
+                                    <span className="text-sm text-slate-600 font-medium">
+                                        End Address
                                     </span>
-                                    <span className="text-lg font-semibold text-red-900">
-                                        [{lastCoord[0].toFixed(5)},{" "}
-                                        {lastCoord[1].toFixed(5)}]
+                                    <span className="text-right text-sm font-semibold text-slate-900">
+                                        {route.end_address || "Unknown"}
                                     </span>
                                 </div>
                             </div>

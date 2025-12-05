@@ -148,6 +148,51 @@ const RoutesPage = () => {
                                         </div>
                                     </div>
 
+                                    {(route.start_address ||
+                                        route.end_address) && (
+                                        <div className="space-y-2">
+                                            {route.start_address && (
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                                        <MapPin
+                                                            size={16}
+                                                            className="text-blue-600"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs text-slate-500">
+                                                            Start
+                                                        </p>
+                                                        <p className="text-sm font-medium text-slate-900 truncate">
+                                                            {
+                                                                route.start_address
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {route.end_address && (
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                                                        <MapPin
+                                                            size={16}
+                                                            className="text-red-600"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs text-slate-500">
+                                                            End
+                                                        </p>
+                                                        <p className="text-sm font-medium text-slate-900 truncate">
+                                                            {route.end_address}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-0">
                                             <Calendar
