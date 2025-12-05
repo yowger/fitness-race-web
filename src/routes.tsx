@@ -16,6 +16,7 @@ import RacesDetailPage from "./features/races/pages/RacesDetailPage"
 import RacesResultsPage from "./features/races/pages/RacesResultsPage"
 import RacesLivePage from "./features/races/pages/RacesLivePage"
 import RaceCreatePage from "./features/races/pages/RacesFormPage"
+import DashboardPage from "./features/dashboard/pages/DashboardPage"
 
 const router = createBrowserRouter([
     {
@@ -40,7 +41,7 @@ const router = createBrowserRouter([
                         path: "/dashboard",
                         element: <DashboardLayout />,
                         children: [
-                            { path: "", element: <p>Dashboard Home</p> },
+                            { path: "", element: <DashboardPage /> },
                             { path: "profile", element: <ProfilePage /> },
                             {
                                 path: "routes",

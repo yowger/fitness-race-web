@@ -424,6 +424,28 @@ const RaceDetailPage = () => {
                                     </div>
                                 )}
 
+                                {race.routes?.distance !== undefined && (
+                                    <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center">
+                                                <Route className="w-5 h-5 text-teal-600" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-500">
+                                                    Distance
+                                                </p>
+                                                <p className="text-lg font-bold text-gray-900">
+                                                    {Math.round(
+                                                        race.routes.distance *
+                                                            100
+                                                    ) / 100}{" "}
+                                                    km
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {race.end_time && (
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
