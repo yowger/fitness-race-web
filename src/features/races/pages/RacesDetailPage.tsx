@@ -10,10 +10,15 @@ import {
     Route,
 } from "lucide-react"
 import Map, { Source, Layer } from "@vis.gl/react-maplibre"
-import { useRace } from "../hooks/useRaces"
+import {
+    useAddParticipant,
+    useRace,
+    useRemoveParticipant,
+} from "../hooks/useRaces"
 import { format } from "date-fns"
 import { useState } from "react"
 import { useUser } from "../../auth/hooks/useUser"
+import { toast } from "sonner"
 
 const MAP_STYLE =
     "https://api.maptiler.com/maps/streets-v4/style.json?key=l60bj9KIXXKDXbsOvzuz"
@@ -39,17 +44,57 @@ const getInitials = (name: string) =>
 const RaceDetailPage = () => {
     const { data: user } = useUser()
     const { id } = useParams()
-    const { data: race, isLoading, isError } = useRace(id!)
+    const {
+        data: race,
+        isLoading,
+        isError,
+        refetch: refetchRace,
+    } = useRace(id!)
     const [isJoining, setIsJoining] = useState(false)
     const isHost = race?.created_by_user?.id === user?.id
+    const hasJoined = race?.participants?.some((p) => p.user.id === user?.id)
+
+    const addParticipantMutation = useAddParticipant()
+    const removeParticipantMutation = useRemoveParticipant()
 
     const handleJoinRace = async () => {
+        if (!race || !user) return
+
         setIsJoining(true)
 
-        setTimeout(() => {
+        try {
+            await addParticipantMutation.mutateAsync({
+                race_id: race.id,
+                user_id: user.id,
+            })
+
+            refetchRace()
+
+            toast.success("Successfully joined the race!")
+        } catch (err) {
+            if (err instanceof Error) {
+                toast.error(err.message || "Failed to join race.")
+            }
+        } finally {
             setIsJoining(false)
-            alert("Successfully joined the race!")
-        }, 1000)
+        }
+    }
+
+    const handleLeaveRace = async () => {
+        if (!race || !user) return
+
+        try {
+            await removeParticipantMutation.mutateAsync({
+                race_id: race.id,
+                user_id: user.id,
+            })
+
+            refetchRace()
+
+            toast.success("You left the race")
+        } catch (err) {
+            if (err instanceof Error) toast.error(err.message)
+        }
     }
 
     if (isLoading)
@@ -156,9 +201,21 @@ const RaceDetailPage = () => {
 
                             <div className="flex flex-col gap-3 items-center">
                                 {isHost ? (
-                                    <span className="inline-flex items-center gap-2 px-6 py-3 bg-green-100 text-green-800 font-semibold rounded-xl shadow-sm">
+                                    <span className="inline-flex ...">
                                         You are the host
                                     </span>
+                                ) : hasJoined ? (
+                                    <button
+                                        onClick={handleLeaveRace}
+                                        disabled={
+                                            removeParticipantMutation.isPending
+                                        }
+                                        className="px-8 py-4 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-xl shadow-lg shadow-gray-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {removeParticipantMutation.isPending
+                                            ? "Leaving..."
+                                            : "Leave Race"}
+                                    </button>
                                 ) : (
                                     <button
                                         onClick={handleJoinRace}
@@ -378,24 +435,24 @@ const RaceDetailPage = () => {
                                             className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
                                         >
                                             <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
-                                                {p.avatar_url ? (
+                                                {p.user.avatar_url ? (
                                                     <img
-                                                        src={p.avatar_url}
-                                                        alt={p.full_name}
+                                                        src={p.user.avatar_url}
+                                                        alt={p.user.full_name}
                                                         className="w-full h-full rounded-full object-cover"
                                                     />
                                                 ) : (
                                                     getInitials(
-                                                        p.full_name || ""
+                                                        p.user.full_name || ""
                                                     )
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-semibold text-gray-900 truncate">
-                                                    {p.full_name}
+                                                    {p.user.full_name}
                                                 </p>
                                                 <p className="text-xs text-gray-500 truncate">
-                                                    {p.email}
+                                                    {p.user.email}
                                                 </p>
                                             </div>
                                         </div>

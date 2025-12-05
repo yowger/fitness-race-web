@@ -23,7 +23,11 @@ export interface Race {
     created_at?: string
     updated_at?: string
     routes?: RouteResponse
-    participants?: UserInfo[]
+    participants?: {
+        id: string
+        joined_at: string
+        user: UserInfo
+    }[]
     created_by_user: UserInfo
 }
 
@@ -81,6 +85,16 @@ export const addParticipant = async (input: {
     user_id: string
 }): Promise<Participant> => {
     const res = await privateApi.post("/api/group-races/participants", input)
+    return res.data
+}
+
+export const removeParticipant = async (input: {
+    race_id: string
+    user_id: string
+}): Promise<Participant> => {
+    const res = await privateApi.delete("/api/group-races/participants", {
+        data: input,
+    })
     return res.data
 }
 
@@ -162,6 +176,17 @@ export const useAddParticipant = () => {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: addParticipant,
+        onSuccess: (_, variables) =>
+            queryClient.invalidateQueries({
+                queryKey: ["race-participants", variables.race_id],
+            }),
+    })
+}
+
+export const useRemoveParticipant = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: removeParticipant,
         onSuccess: (_, variables) =>
             queryClient.invalidateQueries({
                 queryKey: ["race-participants", variables.race_id],
