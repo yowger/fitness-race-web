@@ -168,6 +168,22 @@ const RaceDetailPage = () => {
                                 <h1 className="text-4xl font-bold text-gray-900 mb-3">
                                     {race.name}
                                 </h1>
+
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Flag className="w-5 h-5 text-blue-600" />
+                                    <span
+                                        className={`px-2 py-1 rounded-full text-sm font-semibold ${
+                                            race.status === "upcoming"
+                                                ? "bg-blue-100 text-blue-800"
+                                                : race.status === "ongoing"
+                                                ? "bg-green-100 text-green-800"
+                                                : "bg-gray-100 text-gray-800"
+                                        }`}
+                                    >
+                                        {race.status.toUpperCase()}
+                                    </span>
+                                </div>
+
                                 {race.description && (
                                     <p className="text-lg text-gray-600 mb-6">
                                         {race.description}
@@ -219,8 +235,16 @@ const RaceDetailPage = () => {
                                 ) : (
                                     <button
                                         onClick={handleJoinRace}
-                                        disabled={isJoining}
-                                        className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled={
+                                            isJoining ||
+                                            race.status !== "upcoming"
+                                        }
+                                        className={`px-8 py-4 text-white font-semibold rounded-xl shadow-lg transition-all
+            ${
+                race.status === "upcoming"
+                    ? "bg-blue-600 hover:bg-blue-700 shadow-blue-600/20"
+                    : "bg-gray-400 cursor-not-allowed shadow-none"
+            }`}
                                     >
                                         {isJoining ? "Joining..." : "Join Race"}
                                     </button>
