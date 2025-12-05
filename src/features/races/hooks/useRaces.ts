@@ -24,6 +24,7 @@ export interface Race {
     updated_at?: string
     routes?: RouteResponse
     participants?: UserInfo[]
+    created_by_user: UserInfo
 }
 
 export interface Participant {

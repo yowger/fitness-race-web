@@ -18,7 +18,7 @@ const raceFormSchema = z.object({
     name: z.string().min(1, "Race name is required"),
     description: z.string().optional(),
     maxParticipants: z.string(),
-    startTime: z.string().optional(),
+    startTime: z.string(),
 })
 
 export type RaceFormValues = z.infer<typeof raceFormSchema>
