@@ -13,6 +13,7 @@ import Map, { Source, Layer } from "@vis.gl/react-maplibre"
 import { useRace } from "../hooks/useRaces"
 import { format } from "date-fns"
 import { useState } from "react"
+import { useUser } from "../../auth/hooks/useUser"
 
 const MAP_STYLE =
     "https://api.maptiler.com/maps/streets-v4/style.json?key=l60bj9KIXXKDXbsOvzuz"
@@ -36,13 +37,15 @@ const getInitials = (name: string) =>
         .slice(0, 2)
 
 const RaceDetailPage = () => {
+    const { data: user } = useUser()
     const { id } = useParams()
     const { data: race, isLoading, isError } = useRace(id!)
     const [isJoining, setIsJoining] = useState(false)
+    const isHost = race?.created_by_user?.id === user?.id
 
     const handleJoinRace = async () => {
         setIsJoining(true)
-        // Add your join race logic here
+
         setTimeout(() => {
             setIsJoining(false)
             alert("Successfully joined the race!")
@@ -151,14 +154,21 @@ const RaceDetailPage = () => {
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    onClick={handleJoinRace}
-                                    disabled={isJoining}
-                                    className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isJoining ? "Joining..." : "Join Race"}
-                                </button>
+                            <div className="flex flex-col gap-3 items-center">
+                                {isHost ? (
+                                    <span className="inline-flex items-center gap-2 px-6 py-3 bg-green-100 text-green-800 font-semibold rounded-xl shadow-sm">
+                                        You are the host
+                                    </span>
+                                ) : (
+                                    <button
+                                        onClick={handleJoinRace}
+                                        disabled={isJoining}
+                                        className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isJoining ? "Joining..." : "Join Race"}
+                                    </button>
+                                )}
+
                                 {spotsLeft !== null && (
                                     <p className="text-sm text-center text-gray-500">
                                         {spotsLeft}{" "}
@@ -367,7 +377,7 @@ const RaceDetailPage = () => {
                                             key={p.id}
                                             className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
                                         >
-                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+                                            <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
                                                 {p.avatar_url ? (
                                                     <img
                                                         src={p.avatar_url}

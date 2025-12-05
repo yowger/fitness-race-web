@@ -272,8 +272,8 @@ function RaceCard({ race }: { race: Race }) {
                             <div
                                 className={`h-full rounded-full transition-all duration-500 ${
                                     isFull
-                                        ? "bg-gradient-to-r from-red-500 to-red-600"
-                                        : "bg-gradient-to-r from-blue-500 to-blue-600"
+                                        ? "bg-linear-to-r from-red-500 to-red-600"
+                                        : "bg-linear-to-r from-blue-500 to-blue-600"
                                 }`}
                                 style={{
                                     width: `${Math.min(
