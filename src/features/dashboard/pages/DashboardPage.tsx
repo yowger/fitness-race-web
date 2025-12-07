@@ -450,9 +450,13 @@ export default function DashboardPage() {
                                             </div>
                                         )}
 
-                                        <button className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold text-sm transition-colors">
-                                            Manage Race
-                                        </button>
+                                        <Link
+                                            to={`/dashboard/races/${race.id}/live`}
+                                        >
+                                            <button className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold text-sm transition-colors">
+                                                Manage Race
+                                            </button>
+                                        </Link>
                                     </div>
                                 </div>
                             ))
