@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom"
-import { LogOut, User, Mail, Shield, Settings } from "lucide-react"
+import { LogOut, User, Mail } from "lucide-react"
 
 import { useSession } from "../../auth/hooks/useSession"
 import { supabase } from "../../../lib/supabase"
@@ -93,7 +93,7 @@ const ProfilePage = () => {
                     </div>
                 </CardContent>
 
-                <CardContent className="space-y-2">
+                {/* <CardContent className="space-y-2">
                     <Button
                         variant="outline"
                         className="w-full justify-start gap-3"
@@ -108,7 +108,7 @@ const ProfilePage = () => {
                         <Shield size={20} className="text-gray-600" />
                         Security & Privacy
                     </Button>
-                </CardContent>
+                </CardContent> */}
 
                 <CardFooter className="pt-4">
                     <Button

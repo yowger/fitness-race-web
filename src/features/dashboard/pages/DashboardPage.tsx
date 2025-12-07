@@ -355,10 +355,10 @@ export default function DashboardPage() {
                                             alt={race.name}
                                             className="w-full h-40 object-cover"
                                         />
-                                        <div className="absolute top-3 left-3 px-3 py-1 bg-purple-600 text-white text-xs font-bold rounded-full flex items-center gap-1">
+                                        {/* <div className="absolute top-3 left-3 px-3 py-1 bg-purple-600 text-white text-xs font-bold rounded-full flex items-center gap-1">
                                             <Trophy size={12} />
                                             HOST
-                                        </div>
+                                        </div> */}
                                         <div className="absolute top-3 right-3 px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">
                                             {race.status.toUpperCase()}
                                         </div>
