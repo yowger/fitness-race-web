@@ -152,7 +152,6 @@ const RaceDetailPage = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
             <div className="bg-white border-b border-gray-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="py-6">
@@ -168,10 +167,8 @@ const RaceDetailPage = () => {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Main Content Card */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    {/* Hero Section */}
-                    <div className="border-b border-gray-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-8">
+                    <div className="border-b border-gray-200 bg-linear-to-br from-blue-50 to-indigo-50 p-8">
                         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                             <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-4">
@@ -309,7 +306,6 @@ const RaceDetailPage = () => {
                         </div>
                     </div>
 
-                    {/* Map Section */}
                     <div className="border-b border-gray-200">
                         <div className="relative h-[450px]">
                             {flatCoords.length > 0 ? (
@@ -419,10 +415,8 @@ const RaceDetailPage = () => {
                         )}
                     </div>
 
-                    {/* Details Grid */}
                     <div className="p-8">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            {/* Route Information */}
                             <div>
                                 <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
                                     <Route className="w-5 h-5 text-blue-600" />
@@ -474,7 +468,7 @@ const RaceDetailPage = () => {
                                                 <p className="text-xs text-gray-500 font-medium mb-1">
                                                     Start Location
                                                 </p>
-                                                <p className="text-sm font-semibold text-gray-900 break-words">
+                                                <p className="text-sm font-semibold text-gray-900 wrap-break-word">
                                                     {startAddress}
                                                 </p>
                                             </div>
@@ -490,7 +484,7 @@ const RaceDetailPage = () => {
                                                 <p className="text-xs text-gray-500 font-medium mb-1">
                                                     Finish Location
                                                 </p>
-                                                <p className="text-sm font-semibold text-gray-900 break-words">
+                                                <p className="text-sm font-semibold text-gray-900 wrap-break-word">
                                                     {endAddress}
                                                 </p>
                                             </div>
@@ -515,7 +509,6 @@ const RaceDetailPage = () => {
                                 </div>
                             </div>
 
-                            {/* Participants */}
                             <div>
                                 <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
                                     <Users className="w-5 h-5 text-blue-600" />
@@ -530,7 +523,12 @@ const RaceDetailPage = () => {
                                                 key={p.id}
                                                 className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100"
                                             >
-                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                                                <div>
+                                                    <span className="text-sm text-gray-500">
+                                                        # {p.bib_number}
+                                                    </span>
+                                                </div>
+                                                <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
                                                     {p.user.avatar_url ? (
                                                         <img
                                                             src={
@@ -552,9 +550,6 @@ const RaceDetailPage = () => {
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-sm font-semibold text-gray-900 truncate">
                                                         {p.user.full_name}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500 truncate">
-                                                        {p.user.email}
                                                     </p>
                                                 </div>
                                             </div>
