@@ -61,10 +61,14 @@ export interface Result {
 }
 
 export interface RaceFilters {
+    userId?: string
+    createdBy?: string
     name?: string
     status?: "upcoming" | "ongoing" | "finished"
     startDate?: string
     endDate?: string
+    limit?: number
+    offset?: number
 }
 
 export const getAllRaces = async (filters?: RaceFilters): Promise<Race[]> => {
