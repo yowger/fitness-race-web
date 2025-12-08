@@ -5,7 +5,9 @@ import { useSession } from "../hooks/useSession"
 const AuthGuestRoute = () => {
     const { session } = useSession()
 
-    if (session) {
+    const user = session?.user
+
+    if (user) {
         return <Navigate to="/dashboard" replace />
     }
 

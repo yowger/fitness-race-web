@@ -6,7 +6,9 @@ const AuthRouteGuard = () => {
     const { session } = useSession()
     const location = useLocation()
 
-    if (!session) {
+    const user = session?.user
+
+    if (!user) {
         return (
             <Navigate
                 to="/auth/sign-in"

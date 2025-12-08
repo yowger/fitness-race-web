@@ -20,6 +20,7 @@ type Props = { children: React.ReactNode }
 export const SessionProvider = ({ children }: Props) => {
     const [session, setSession] = useState<Session | null>(null)
     const { data: user, isLoading: isUserLoading } = useUser()
+    console.log("🚀 ~ SessionProvider ~ user:", user)
 
     useEffect(() => {
         const authStateListener = supabase.auth.onAuthStateChange(

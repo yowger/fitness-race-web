@@ -8,7 +8,6 @@ import {
     Zap,
     Activity,
     Target,
-    Pause,
     StopCircle,
     Download,
     Play,
@@ -39,6 +38,14 @@ export default function RacesOngoingPage() {
     ]
 
     const isHost = liveRace?.created_by_user?.id === user?.id
+
+    function handleStartRace() {
+        console.log("start race")
+    }
+
+    function handleEndRace() {
+        console.log("end race")
+    }
 
     const [race] = useState({
         name: "City Marathon 5K",
@@ -211,17 +218,29 @@ export default function RacesOngoingPage() {
                         {isHost && (
                             <div className="flex flex-col gap-3 lg:items-end">
                                 <div className="flex gap-2">
+                                    {liveRace?.status === "upcoming" && (
+                                        <button
+                                            onClick={handleStartRace}
+                                            className="px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 shadow-lg"
+                                        >
+                                            <Play size={16} />
+                                            Start Race
+                                        </button>
+                                    )}
+
+                                    {liveRace?.status === "ongoing" && (
+                                        <button
+                                            onClick={handleEndRace}
+                                            className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 shadow-lg"
+                                        >
+                                            <StopCircle size={16} />
+                                            End Race
+                                        </button>
+                                    )}
+
                                     <button className="px-4 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 border border-white/30">
                                         <Download size={16} />
                                         Export Data
-                                    </button>
-                                    <button className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 shadow-lg">
-                                        <Pause size={16} />
-                                        Pause Race
-                                    </button>
-                                    <button className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 shadow-lg">
-                                        <StopCircle size={16} />
-                                        End Race
                                     </button>
                                 </div>
                             </div>
