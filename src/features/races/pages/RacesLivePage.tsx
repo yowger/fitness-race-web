@@ -172,6 +172,7 @@ const RacesLivePage = () => {
     const participantData = {
         type: "FeatureCollection",
         features: participantFeatures,
+        properties: {},
     }
 
     return (
