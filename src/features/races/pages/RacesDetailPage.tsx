@@ -51,6 +51,7 @@ const RaceDetailPage = () => {
         isError,
         refetch: refetchRace,
     } = useRace(id!)
+    console.log("🚀 ~ RaceDetailPage ~ race:", race)
 
     const startAddress = race?.routes?.start_address
     const endAddress = race?.routes?.end_address
@@ -253,6 +254,13 @@ const RaceDetailPage = () => {
                             </div>
 
                             <div className="flex flex-col gap-3 lg:items-end">
+                                <Link
+                                    to={`/dashboard/races/${race.id}/live`}
+                                    className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-all text-sm text-center"
+                                >
+                                    Go to Live Race
+                                </Link>
+
                                 {!isHost && (
                                     <>
                                         {hasJoined ? (
