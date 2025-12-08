@@ -379,12 +379,6 @@ export default function DashboardPage() {
                                                     {new Date(
                                                         race.start_time
                                                     ).toLocaleDateString()}{" "}
-                                                    –{" "}
-                                                    {race.end_time
-                                                        ? new Date(
-                                                              race.end_time
-                                                          ).toLocaleDateString()
-                                                        : "TBD"}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2 text-gray-600">

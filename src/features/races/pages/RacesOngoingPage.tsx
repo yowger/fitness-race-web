@@ -1,3 +1,4 @@
+import Map, { Layer, Marker, Source } from "@vis.gl/react-maplibre"
 import {
     MapPin,
     Users,
@@ -10,10 +11,31 @@ import {
     Pause,
     StopCircle,
     Download,
+    Play,
+    Flag,
 } from "lucide-react"
 import { useState } from "react"
+import { useParams } from "react-router-dom"
+import { useRace } from "../hooks/useRaces"
 
 export default function RacesOngoingPage() {
+    const { id } = useParams()
+    const { data: liveRace } = useRace(id!)
+    console.log("🚀 ~ RacesOngoingPage ~ liveRace:", liveRace)
+
+    const coords =
+        liveRace?.routes?.geojson.features?.[0]?.geometry?.coordinates ?? []
+    let flatCoords: [number, number][] = []
+
+    if (Array.isArray(coords[0])) {
+        flatCoords = coords as [number, number][]
+    }
+
+    const firstCoord: [number, number] = flatCoords[0] ?? [0, 0]
+    const lastCoord: [number, number] = flatCoords[flatCoords.length - 1] ?? [
+        0, 0,
+    ]
+
     const [race] = useState({
         name: "City Marathon 5K",
         route: {
@@ -208,7 +230,6 @@ export default function RacesOngoingPage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Live Map */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                             <div className="p-4 border-b border-gray-200 bg-linear-to-r from-gray-50 to-white">
                                 <div className="flex items-center justify-between">
@@ -222,19 +243,66 @@ export default function RacesOngoingPage() {
                                 </div>
                             </div>
                             <div className="relative h-[400px] bg-gray-100">
-                                <img
-                                    src={race.route.map_url}
-                                    alt="Race Map"
-                                    className="w-full h-full object-cover"
-                                />
-                                <div className="absolute top-4 right-4 px-3 py-2 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg">
+                                <Map
+                                    mapStyle="https://api.maptiler.com/maps/streets-v4/style.json?key=l60bj9KIXXKDXbsOvzuz"
+                                    initialViewState={{
+                                        longitude: 125.6128,
+                                        latitude: 7.0731,
+                                        zoom: 14,
+                                    }}
+                                    attributionControl={false}
+                                >
+                                    <Source
+                                        id="route"
+                                        type="geojson"
+                                        data={{
+                                            type: "Feature",
+                                            geometry: {
+                                                type: "LineString",
+                                                coordinates: coords,
+                                            },
+                                            properties: {},
+                                        }}
+                                    >
+                                        <Layer
+                                            id="route-line"
+                                            type="line"
+                                            paint={{
+                                                "line-color": "#3b82f6",
+                                                "line-width": 4,
+                                            }}
+                                        />
+                                    </Source>
+
+                                    <Marker
+                                        longitude={firstCoord[0]}
+                                        latitude={firstCoord[1]}
+                                        anchor="center"
+                                    >
+                                        <div className="p-2 bg-green-600 rounded-full shadow-lg text-white">
+                                            <Play size={18} />
+                                        </div>
+                                    </Marker>
+
+                                    <Marker
+                                        longitude={lastCoord[0]}
+                                        latitude={lastCoord[1]}
+                                        anchor="center"
+                                    >
+                                        <div className="p-2 bg-red-600 rounded-full shadow-lg text-white">
+                                            <Flag size={18} />
+                                        </div>
+                                    </Marker>
+                                </Map>
+
+                                {/* <div className="absolute top-4 right-4 px-3 py-2 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg">
                                     <p className="text-xs text-gray-500 font-medium">
                                         Real-time tracking
                                     </p>
                                     <p className="text-sm font-bold text-gray-900">
                                         Updates every 5s
                                     </p>
-                                </div>
+                                </div> */}
                             </div>
                         </div>
 
@@ -258,7 +326,6 @@ export default function RacesOngoingPage() {
                                             }`}
                                         >
                                             <div className="flex items-center gap-4">
-                                                {/* Position Badge */}
                                                 <div
                                                     className={`w-12 h-12 rounded-lg bg-linear-to-b ${getPositionColor(
                                                         participant.position
