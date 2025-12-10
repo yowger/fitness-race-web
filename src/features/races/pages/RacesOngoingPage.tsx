@@ -202,6 +202,8 @@ export default function RacesOngoingPage() {
             socket.off("participantUpdate")
             socket.off("raceStatusUpdate")
         }
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     return (
