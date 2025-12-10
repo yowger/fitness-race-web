@@ -9,6 +9,8 @@ import {
     ResizablePanelGroup,
 } from "../../../components/ui/resizable"
 import { Play, Square, Users } from "lucide-react"
+import { useParams } from "react-router-dom"
+import { useRace } from "../hooks/useRaces"
 
 const MAP_STYLE =
     "https://api.maptiler.com/maps/streets-v4/style.json?key=l60bj9KIXXKDXbsOvzuz"
@@ -18,8 +20,7 @@ const START = {
     lng: 125.6128,
 }
 
-const SOCKET_URL = "http://localhost:4000"
-
+const SOCKET_URL = import.meta.env.VITE_PUBLIC_SOCKET_URL
 type UserIdentity = {
     id: string
     name: string
@@ -39,9 +40,11 @@ type LiveRaceState = {
 type RaceUser = UserIdentity & { state: LiveRaceState }
 
 const RacesLivePage = () => {
-    const { data: route, isLoading } = useRoute(
-        "7a6f818a-bd09-4ef2-b6d2-2bf49111df65"
-    )
+    const { id } = useParams()
+
+    const { data: race } = useRace(id!)
+    const raceParticipants = race?.participants
+
     const socket = io(SOCKET_URL)
     const [participants, setParticipants] = useState<RaceUser[]>([])
     const [finishedParticipants, setFinishedParticipants] = useState<
@@ -49,104 +52,8 @@ const RacesLivePage = () => {
     >([])
     const allParticipants = [...participants, ...finishedParticipants]
 
-    const roomId = "1"
-
-    useEffect(() => {
-        if (!roomId || !socket) return
-
-        const user: UserIdentity = {
-            id: "admin-id",
-            name: "Admin",
-            role: "admin",
-        }
-
-        const handleLeaveRoom = (data: { id: string }) => {
-            setParticipants((prev) => prev.filter((p) => p.id !== data.id))
-        }
-
-        const handleRoomParticipants = (users: RaceUser[]) => {
-            console.log("ROOM PARTICIPANTS:", users)
-            setParticipants(users)
-        }
-
-        const handleLocationUpdate = (data: {
-            id: string
-            lat: number
-            lng: number
-        }) => {
-            console.log("location update:")
-
-            setParticipants((prev) => {
-                const others = prev.filter((p) => p.id !== data.id)
-                const existing = prev.find((p) => p.id === data.id)
-                const updated: RaceUser = existing
-                    ? {
-                          ...existing,
-                          state: {
-                              ...existing.state,
-                              lat: data.lat,
-                              lng: data.lng,
-                              lastUpdate: Date.now(),
-                          },
-                      }
-                    : {
-                          id: data.id,
-                          name: "User",
-                          role: "racer",
-                          state: {
-                              lat: data.lat,
-                              lng: data.lng,
-                              finished: false,
-                          },
-                      }
-                return [...others, updated]
-            })
-        }
-
-        const handleUserFinish = (data: { id: string; name?: string }) => {
-            console.log("🚀 Finish line event:", data)
-
-            setParticipants((prev) => {
-                const finished = prev.find((p) => p.id === data.id)
-                if (!finished) return prev
-
-                setFinishedParticipants((fp) => [
-                    ...fp,
-                    {
-                        ...finished,
-                        state: { ...finished.state, finished: true },
-                    },
-                ])
-
-                return prev.filter((p) => p.id !== data.id)
-            })
-        }
-
-        socket.emit("joinRoom", roomId, user)
-
-        socket.on("roomParticipants", handleRoomParticipants)
-        socket.on("locationUpdate", handleLocationUpdate)
-        socket.on("userFinished", handleUserFinish)
-        socket.on("userLeft", handleLeaveRoom)
-
-        return () => {
-            socket.emit("leaveRoom", roomId)
-            socket.off("roomParticipants", handleRoomParticipants)
-            socket.off("locationUpdate", handleLocationUpdate)
-            socket.off("userFinished", handleUserFinish)
-            socket.off("userLeft", handleLeaveRoom)
-        }
-    }, [socket, roomId])
-
-    if (!route) return <div>Route data not available.</div>
-    if (isLoading)
-        return (
-            <div className="flex items-center justify-center h-screen text-slate-600">
-                Loading race route...
-            </div>
-        )
-
-    const coords = route.geojson.features?.[0]?.geometry?.coordinates ?? []
+    const coords =
+        race?.routes?.geojson.features?.[0]?.geometry?.coordinates ?? []
 
     const lineData = {
         type: "Feature",
