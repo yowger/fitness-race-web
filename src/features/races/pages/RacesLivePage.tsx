@@ -42,7 +42,7 @@ const RacesLivePage = () => {
     const { data: route, isLoading } = useRoute(
         "7a6f818a-bd09-4ef2-b6d2-2bf49111df65"
     )
-    const [socket] = useState(() => io(SOCKET_URL))
+    const socket = io(SOCKET_URL)
     const [participants, setParticipants] = useState<RaceUser[]>([])
     const [finishedParticipants, setFinishedParticipants] = useState<
         RaceUser[]

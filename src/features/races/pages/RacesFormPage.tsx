@@ -16,6 +16,7 @@ import { useRoutes } from "../../routes/api/useRoutes"
 import { toast } from "sonner"
 import { useCreateRace } from "../hooks/useRaces"
 import { useNavigate } from "react-router-dom"
+import { io } from "socket.io-client"
 
 const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -38,8 +39,11 @@ const getInitials = (name: string) =>
         .toUpperCase()
         .slice(0, 2) ?? "U"
 
+const SOCKET_URL = "http://localhost:4000"
+
 export default function RaceCreatePage() {
     const navigate = useNavigate()
+    const socket = io(SOCKET_URL)
 
     const [sheetOpen, setSheetOpen] = useState(false)
     const [selectedRouteId, setSelectedRouteId] = useState<string>("")
@@ -66,7 +70,11 @@ export default function RaceCreatePage() {
                 route_id: values.routeId,
             },
             {
-                onSuccess: () => {
+                onSuccess: (data) => {
+                    const raceId = data.id
+
+                    socket.emit("createRoom", raceId)
+
                     setSelectedRouteId("")
                     toast.success("Race created successfully.")
 
