@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom"
+// import { useNavigate } from "react-router-dom"
 import { LogOut, User, Mail } from "lucide-react"
 
 import { useSession } from "../../auth/hooks/useSession"
@@ -13,11 +13,19 @@ import { Button } from "../../../components/ui/button"
 
 const ProfilePage = () => {
     const { user, session } = useSession()
-    const navigate = useNavigate()
+    // const navigate = useNavigate()
 
     const handleLogout = async () => {
         await supabase.auth.signOut()
-        navigate("/auth/sign-in", { replace: true })
+
+        // const sessionKey = Object.keys(localStorage).find(
+        //     (key) => key.startsWith("sb-") && key.endsWith("-auth-token")
+        // )
+        // if (sessionKey) localStorage.removeItem(sessionKey)
+
+        // navigate("/auth/sign-in", { replace: true })
+
+        window.location.reload()
     }
 
     const getInitials = (name: string | undefined) => {

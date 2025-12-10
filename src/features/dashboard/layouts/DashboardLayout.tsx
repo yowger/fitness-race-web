@@ -14,7 +14,15 @@ const DashboardLayout = () => {
 
     const handleLogout = async () => {
         await supabase.auth.signOut()
-        navigate("/auth/sign-in", { replace: true })
+
+        // const sessionKey = Object.keys(localStorage).find(
+        //     (key) => key.startsWith("sb-") && key.endsWith("-auth-token")
+        // )
+        // if (sessionKey) localStorage.removeItem(sessionKey)
+
+        // navigate("/auth/sign-in", { replace: true })
+
+        window.location.reload()
     }
 
     const handleProfile = () => {
