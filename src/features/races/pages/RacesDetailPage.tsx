@@ -20,6 +20,7 @@ import { format } from "date-fns"
 import { useState } from "react"
 import { useUser } from "../../auth/hooks/useUser"
 import { toast } from "sonner"
+import { io } from "socket.io-client"
 
 const MAP_STYLE =
     "https://api.maptiler.com/maps/streets-v4/style.json?key=l60bj9KIXXKDXbsOvzuz"
@@ -42,6 +43,8 @@ const getInitials = (name: string) =>
         .toUpperCase()
         .slice(0, 2)
 
+const SOCKET_URL = import.meta.env.VITE_PUBLIC_SOCKET_URL
+
 const RaceDetailPage = () => {
     const { data: user } = useUser()
     const { id } = useParams()
@@ -51,7 +54,8 @@ const RaceDetailPage = () => {
         isError,
         refetch: refetchRace,
     } = useRace(id!)
-    console.log("🚀 ~ RaceDetailPage ~ race:", race)
+
+    const socket = io(SOCKET_URL)
 
     const startAddress = race?.routes?.start_address
     const endAddress = race?.routes?.end_address
@@ -74,6 +78,7 @@ const RaceDetailPage = () => {
             })
 
             refetchRace()
+            socket.emit("joinRace", { raceId: race.id, userId: user.id })
 
             toast.success("Successfully joined the race!")
         } catch (err) {
@@ -95,6 +100,7 @@ const RaceDetailPage = () => {
             })
 
             refetchRace()
+            socket.emit("leaveRace", { raceId: race.id, userId: user.id })
 
             toast.success("You left the race")
         } catch (err) {

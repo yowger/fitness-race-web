@@ -39,7 +39,7 @@ const getInitials = (name: string) =>
         .toUpperCase()
         .slice(0, 2) ?? "U"
 
-const SOCKET_URL = "http://localhost:4000"
+const SOCKET_URL = import.meta.env.VITE_PUBLIC_SOCKET_URL
 
 export default function RaceCreatePage() {
     const navigate = useNavigate()
@@ -73,7 +73,7 @@ export default function RaceCreatePage() {
                 onSuccess: (data) => {
                     const raceId = data.id
 
-                    socket.emit("createRoom", raceId)
+                    socket.emit("createRace", { raceId })
 
                     setSelectedRouteId("")
                     toast.success("Race created successfully.")
