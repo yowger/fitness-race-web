@@ -468,10 +468,10 @@ export default function RacesOngoingPage() {
                                     .map((participant) => (
                                         <div
                                             key={participant.id}
-                                            className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-gray-50 to-white border border-gray-100"
+                                            className="flex items-center gap-3 p-3 rounded-lg bg-linear-to-br from-gray-50 to-white border border-gray-100"
                                         >
                                             <div
-                                                className={`w-10 h-10 rounded-lg bg-gradient-to-br ${getPositionColor(
+                                                className={`w-10 h-10 rounded-lg bg-linear-to-br ${getPositionColor(
                                                     participant.position
                                                 )} flex items-center justify-center text-white font-bold shadow-md`}
                                             >

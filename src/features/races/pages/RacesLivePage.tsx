@@ -154,27 +154,6 @@ const RacesLivePage = () => {
         geometry: { type: "LineString", coordinates: coords },
     } as const
 
-    const participantFeatures = allParticipants
-        .filter((p) => p.state.lat && p.state.lng)
-        .map((p) => ({
-            type: "Feature",
-            geometry: {
-                type: "Point",
-                coordinates: [p.state.lng, p.state.lat],
-            },
-            properties: {
-                name: p.name,
-                bib: p.bib ?? 0,
-                finished: p.state.finished,
-            },
-        }))
-
-    const participantData = {
-        type: "FeatureCollection",
-        features: participantFeatures,
-        properties: {},
-    }
-
     return (
         <div className="flex flex-col h-screen overflow-hidden">
             <ResizablePanelGroup
@@ -207,7 +186,26 @@ const RacesLivePage = () => {
                         <Source
                             id="participants"
                             type="geojson"
-                            data={participantData}
+                            data={{
+                                type: "FeatureCollection",
+                                features: allParticipants
+                                    .filter((p) => p.state.lat && p.state.lng)
+                                    .map((p) => ({
+                                        type: "Feature",
+                                        geometry: {
+                                            type: "Point",
+                                            coordinates: [
+                                                p.state.lng,
+                                                p.state.lat,
+                                            ],
+                                        },
+                                        properties: {
+                                            name: p.name,
+                                            bib: p.bib ?? 0,
+                                            finished: p.state.finished,
+                                        },
+                                    })),
+                            }}
                         >
                             <Layer
                                 id="participant-points"
