@@ -14,7 +14,7 @@ import RoutesDetailsPage from "./features/routes/pages/RoutesDetailsPage"
 import RacesPage from "./features/races/pages/RacesPage"
 import RacesDetailPage from "./features/races/pages/RacesDetailPage"
 import RacesResultsPage from "./features/races/pages/RacesResultsPage"
-import RacesLivePage from "./features/races/pages/RacesLivePage"
+// import RacesLivePage from "./features/races/pages/RacesLivePage"
 import RaceCreatePage from "./features/races/pages/RacesFormPage"
 import DashboardPage from "./features/dashboard/pages/DashboardPage"
 import RacesOngoingPage from "./features/races/pages/RacesOngoingPage"
@@ -76,10 +76,10 @@ const router = createBrowserRouter([
                                         path: ":id",
                                         element: <RacesDetailPage />,
                                     },
-                                    {
-                                        path: ":id/ongoing",
-                                        element: <RacesLivePage />,
-                                    },
+                                    // {
+                                    //     path: ":id/ongoing",
+                                    //     element: <RacesLivePage />,
+                                    // },
                                     {
                                         path: ":id/live",
                                         element: <RacesOngoingPage />,

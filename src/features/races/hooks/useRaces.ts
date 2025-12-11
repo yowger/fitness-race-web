@@ -16,6 +16,8 @@ export interface Race {
     description?: string
     start_time: string
     end_time?: string
+    actual_start_time?: string
+    actual_end_time?: string
     max_participants?: number
     route_id?: string
     created_by?: string
@@ -148,6 +150,16 @@ export const getResultsByRace = async (raceId: string): Promise<Result[]> => {
     return res.data
 }
 
+export const startRace = async (id: string): Promise<Race> => {
+    const res = await privateApi.post(`/api/group-races/${id}/start`)
+    return res.data
+}
+
+export const endRace = async (id: string): Promise<Race> => {
+    const res = await privateApi.post(`/api/group-races/${id}/end`)
+    return res.data
+}
+
 export const useRaces = (filters?: RaceFilters) =>
     useQuery({
         queryKey: ["races", filters],
@@ -244,5 +256,29 @@ export const useAddResult = () => {
             queryClient.invalidateQueries({
                 queryKey: ["race-results", variables.race_id],
             }),
+    })
+}
+
+export const useStartRace = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: startRace,
+        onSuccess: (_, raceId) => {
+            queryClient.invalidateQueries({
+                queryKey: ["race", raceId],
+            })
+        },
+    })
+}
+
+export const useEndRace = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: endRace,
+        onSuccess: (_, raceId) => {
+            queryClient.invalidateQueries({
+                queryKey: ["race", raceId],
+            })
+        },
     })
 }

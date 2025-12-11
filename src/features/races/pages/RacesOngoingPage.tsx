@@ -16,13 +16,13 @@ import {
 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
-import { useRace } from "../hooks/useRaces"
+import { useEndRace, useRace, useStartRace } from "../hooks/useRaces"
 import { useUser } from "../../auth/hooks/useUser"
 import { io } from "socket.io-client"
 
 const SOCKET_URL = import.meta.env.VITE_PUBLIC_SOCKET_URL
 
-const race = {
+const dummyRaceData = {
     name: "City Marathon 5K",
     route: {
         map_url: "https://via.placeholder.com/600x300?text=Live+Race+Map",
@@ -95,10 +95,25 @@ type OnlineUser = {
     role: "admin" | "racer" | "guest"
 }
 
+function formatElapsedTime(seconds: number) {
+    const h = Math.floor(seconds / 3600)
+        .toString()
+        .padStart(2, "0")
+    const m = Math.floor((seconds % 3600) / 60)
+        .toString()
+        .padStart(2, "0")
+    const s = Math.floor(seconds % 60)
+        .toString()
+        .padStart(2, "0")
+
+    return `${h}:${m}:${s}`
+}
+
 export default function RacesOngoingPage() {
     const { id } = useParams()
     const { data: user } = useUser()
-    const { data: liveRace } = useRace(id!)
+    const { data: liveRace, refetch: refetchLiveRace } = useRace(id!)
+    console.log("🚀 ~ RacesOngoingPage ~ liveRace:", liveRace)
     const socket = io(SOCKET_URL)
 
     const coords =
@@ -116,12 +131,78 @@ export default function RacesOngoingPage() {
 
     const isHost = liveRace?.created_by_user?.id === user?.id
 
-    function handleStartRace() {
-        console.log("start race")
+    const startRace = useStartRace()
+    const endRace = useEndRace()
+
+    const [elapsedTime, setElapsedTime] = useState("00:00:00")
+
+    useEffect(() => {
+        if (!liveRace?.actual_start_time) return
+
+        const start = new Date(liveRace.actual_start_time + "Z").getTime()
+
+        const update = () => {
+            const now = Date.now()
+            const diff = (now - start) / 1000
+            setElapsedTime(formatElapsedTime(diff))
+        }
+
+        update()
+
+        let interval: NodeJS.Timeout | null = null
+
+        if (liveRace.status === "ongoing") {
+            interval = setInterval(update, 1000)
+        }
+
+        if (liveRace.status === "finished" && liveRace.actual_end_time) {
+            const end = new Date(liveRace.actual_end_time + "Z").getTime()
+            const diff = (end - start) / 1000
+            setElapsedTime(formatElapsedTime(diff))
+        }
+
+        return () => {
+            if (interval) clearInterval(interval)
+        }
+    }, [
+        liveRace?.status,
+        liveRace?.actual_start_time,
+        liveRace?.actual_end_time,
+    ])
+
+    async function handleStartRace() {
+        if (!id) return
+
+        try {
+            const response = await startRace.mutateAsync(id)
+
+            socket.emit("race-started", {
+                raceId: id,
+                actualStartTime: response.actual_start_time,
+            })
+
+            console.log("Race started:", response)
+        } catch (err) {
+            console.error("Start race error", err)
+        }
     }
 
-    function handleEndRace() {
-        console.log("end race")
+    async function handleEndRace() {
+        if (!id) return
+
+        try {
+            const response = await endRace.mutateAsync(id)
+
+            socket.emit("race-ended", {
+                raceId: id,
+                actualEndTime: response.actual_end_time,
+            })
+
+            console.log("Race ended:", response)
+        } catch (err) {
+            console.log("🚀 ~ handleEndRace ~ err:", err)
+            console.error("End race error", err)
+        }
     }
 
     const getInitials = (name: string) =>
@@ -191,9 +272,8 @@ export default function RacesOngoingPage() {
             // update distanceCovered, position, pace, etc.
         })
 
-        socket.on("raceStatusUpdate", (status) => {
-            console.log("🚀 ~ RacesOngoingPage ~ status:", status)
-            // setRaceStatus(status)
+        socket.on("raceStatusUpdate", () => {
+            refetchLiveRace?.()
         })
 
         return () => {
@@ -213,14 +293,17 @@ export default function RacesOngoingPage() {
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500 rounded-full animate-pulse">
-                                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                                    <span className="text-xs font-bold uppercase">
-                                        Live
-                                    </span>
-                                </div>
+                                {liveRace?.status === "ongoing" && (
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500 rounded-full animate-pulse">
+                                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                                        <span className="text-xs font-bold uppercase">
+                                            Live
+                                        </span>
+                                    </div>
+                                )}
+
                                 <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-xs font-bold uppercase">
-                                    Ongoing
+                                    {liveRace?.status}
                                 </span>
 
                                 {onlineGuests.length +
@@ -249,7 +332,7 @@ export default function RacesOngoingPage() {
                                             Elapsed Time
                                         </p>
                                         <p className="text-lg font-bold">
-                                            {race.elapsedTime}
+                                            {elapsedTime}
                                         </p>
                                     </div>
                                 </div>
@@ -260,7 +343,7 @@ export default function RacesOngoingPage() {
                                     </div>
                                     <div>
                                         <p className="text-xs text-blue-100 font-medium">
-                                            Distance
+                                            Total Distance
                                         </p>
                                         <p className="text-lg font-bold">
                                             {liveRace?.routes?.distance?.toFixed(
@@ -277,7 +360,7 @@ export default function RacesOngoingPage() {
                                     </div>
                                     <div>
                                         <p className="text-xs text-blue-100 font-medium">
-                                            Participants
+                                            Total Participants
                                         </p>
                                         <p className="text-lg font-bold">
                                             {liveRace?.participants?.length ||
@@ -292,7 +375,7 @@ export default function RacesOngoingPage() {
                                     </div>
                                     <div>
                                         <p className="text-xs text-blue-100 font-medium">
-                                            Active Now
+                                            Active Racers
                                         </p>
                                         <p className="text-lg font-bold">
                                             {onlineRacers.length}
@@ -325,10 +408,12 @@ export default function RacesOngoingPage() {
                                         </button>
                                     )}
 
-                                    <button className="px-4 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 border border-white/30">
-                                        <Download size={16} />
-                                        Export Data
-                                    </button>
+                                    {liveRace?.status === "finished" && (
+                                        <button className="px-4 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 border border-white/30">
+                                            <Download size={16} />
+                                            Export Data
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -421,7 +506,7 @@ export default function RacesOngoingPage() {
                                 </h2>
                             </div>
                             <div className="divide-y divide-gray-100">
-                                {race.participants
+                                {dummyRaceData.participants
                                     .sort((a, b) => a.position - b.position)
                                     .map((participant, index) => (
                                         <div
@@ -490,7 +575,7 @@ export default function RacesOngoingPage() {
                                                                 style={{
                                                                     width: `${
                                                                         (participant.distanceCovered /
-                                                                            race.distance) *
+                                                                            dummyRaceData.distance) *
                                                                         100
                                                                     }%`,
                                                                 }}
@@ -509,7 +594,9 @@ export default function RacesOngoingPage() {
                                                                     1
                                                                 )}{" "}
                                                                 /{" "}
-                                                                {race.distance}{" "}
+                                                                {
+                                                                    dummyRaceData.distance
+                                                                }{" "}
                                                                 km
                                                             </span>
                                                         </div>
@@ -527,7 +614,7 @@ export default function RacesOngoingPage() {
                                                         <div className="text-gray-500">
                                                             {(
                                                                 (participant.distanceCovered /
-                                                                    race.distance) *
+                                                                    dummyRaceData.distance) *
                                                                 100
                                                             ).toFixed(0)}
                                                             % complete
@@ -622,7 +709,7 @@ export default function RacesOngoingPage() {
                                             <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                                             {onlineRacers.length +
                                                 onlineAdmins.length}{" "}
-                                            Racers online
+                                            online
                                         </span>
 
                                         <span className="text-sm font-normal text-gray-600">
