@@ -93,6 +93,15 @@ type OnlineUser = {
     userId: string
     socketId: string
     role: "admin" | "racer" | "guest"
+    coords?: [number, number]
+    speed?: number
+    lastUpdate?: number
+}
+
+type RacerPosition = {
+    coords: [number, number]
+    lastUpdate: number
+    speed: number
 }
 
 function formatElapsedTime(seconds: number) {
@@ -113,7 +122,9 @@ export default function RacesOngoingPage() {
     const { id } = useParams()
     const { data: user } = useUser()
     const { data: liveRace, refetch: refetchLiveRace } = useRace(id!)
-    console.log("🚀 ~ RacesOngoingPage ~ liveRace:", liveRace)
+    const [racerPositions, setRacerPositions] = useState<
+        Record<string, RacerPosition>
+    >({})
     const socket = io(SOCKET_URL)
 
     const coords =
@@ -267,10 +278,24 @@ export default function RacesOngoingPage() {
             setOnlineGuests(guests)
         })
 
-        socket.on("participantUpdate", (update) => {
-            console.log("🚀 ~ RacesOngoingPage ~ update:", update)
-            // update distanceCovered, position, pace, etc.
-        })
+        socket.on(
+            "participantUpdate",
+            (update: {
+                userId: string
+                coords: [number, number]
+                timestamp: number
+                speed?: number
+            }) => {
+                setRacerPositions((prev) => ({
+                    ...prev,
+                    [update.userId]: {
+                        coords: update.coords,
+                        lastUpdate: update.timestamp,
+                        speed: update.speed ?? 0,
+                    },
+                }))
+            }
+        )
 
         socket.on("raceStatusUpdate", () => {
             refetchLiveRace?.()
@@ -486,6 +511,34 @@ export default function RacesOngoingPage() {
                                             <Flag size={18} />
                                         </div>
                                     </Marker>
+
+                                    {Object.entries(racerPositions).map(
+                                        ([userId, data]) => {
+                                            const isOnline =
+                                                !!onlineMap[userId] &&
+                                                Date.now() - data.lastUpdate <
+                                                    10_000
+
+                                            return (
+                                                <Marker
+                                                    key={userId}
+                                                    longitude={data.coords[0]}
+                                                    latitude={data.coords[1]}
+                                                    anchor="center"
+                                                >
+                                                    <div
+                                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg ${
+                                                            isOnline
+                                                                ? "bg-green-500"
+                                                                : "bg-gray-400"
+                                                        }`}
+                                                    >
+                                                        {userId.slice(-2)}
+                                                    </div>
+                                                </Marker>
+                                            )
+                                        }
+                                    )}
                                 </Map>
 
                                 {/* <div className="absolute top-4 right-4 px-3 py-2 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg">
