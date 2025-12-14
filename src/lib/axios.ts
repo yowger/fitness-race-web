@@ -1,4 +1,5 @@
 import axios, { AxiosError } from "axios"
+import { supabase } from "./supabase"
 
 export const api = axios.create({
     baseURL: import.meta.env.VITE_PUBLIC_API_URL || "http://localhost:4000",
@@ -23,21 +24,19 @@ export const privateApi = axios.create({
     },
 })
 
-privateApi.interceptors.request.use((config) => {
-    const sessionKey = Object.keys(localStorage).find(
-        (key) => key.startsWith("sb-") && key.endsWith("-auth-token")
-    )
-    const session = sessionKey
-        ? JSON.parse(localStorage.getItem(sessionKey)!)
-        : null
-    const token = session?.access_token
+privateApi.interceptors.request.use(
+    async (config) => {
+        const { data } = await supabase.auth.getSession()
+        const token = data.session?.access_token
 
-    if (token && config.headers) {
-        config.headers["Authorization"] = `Bearer ${token}`
-    }
+        if (token && config.headers) {
+            config.headers.Authorization = `Bearer ${token}`
+        }
 
-    return config
-})
+        return config
+    },
+    (error) => Promise.reject(error)
+)
 
 privateApi.interceptors.response.use(
     (res) => res,
@@ -46,11 +45,7 @@ privateApi.interceptors.response.use(
 
         if (error instanceof AxiosError) {
             if (error.response?.status === 401) {
-                const sessionKey = Object.keys(localStorage).find(
-                    (key) =>
-                        key.startsWith("sb-") && key.endsWith("-auth-token")
-                )
-                if (sessionKey) localStorage.removeItem(sessionKey)
+                supabase.auth.signOut()
             }
         }
 

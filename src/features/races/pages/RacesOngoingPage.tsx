@@ -22,73 +22,6 @@ import { io } from "socket.io-client"
 
 const SOCKET_URL = import.meta.env.VITE_PUBLIC_SOCKET_URL
 
-const dummyRaceData = {
-    name: "City Marathon 5K",
-    route: {
-        map_url: "https://via.placeholder.com/600x300?text=Live+Race+Map",
-    },
-    distance: 5,
-    participants: [
-        {
-            id: 1,
-            name: "Alice Johnson",
-            bib: 101,
-            distanceCovered: 4.2,
-            position: 1,
-            pace: "4:15/km",
-            avatar: null,
-        },
-        {
-            id: 2,
-            name: "Bob Martinez",
-            bib: 102,
-            distanceCovered: 3.9,
-            position: 2,
-            pace: "4:28/km",
-            avatar: null,
-        },
-        {
-            id: 3,
-            name: "Charlie Brown",
-            bib: 103,
-            distanceCovered: 3.7,
-            position: 3,
-            pace: "4:35/km",
-            avatar: null,
-        },
-        {
-            id: 4,
-            name: "Diana Prince",
-            bib: 104,
-            distanceCovered: 3.5,
-            position: 4,
-            pace: "4:42/km",
-            avatar: null,
-        },
-        {
-            id: 5,
-            name: "Ethan Hunt",
-            bib: 105,
-            distanceCovered: 3.3,
-            position: 5,
-            pace: "4:48/km",
-            avatar: null,
-        },
-        {
-            id: 6,
-            name: "Fiona Chen",
-            bib: 106,
-            distanceCovered: 3.1,
-            position: 6,
-            pace: "4:55/km",
-            avatar: null,
-        },
-    ],
-    elapsedTime: "00:32:15",
-    totalParticipants: 50,
-    status: "ongoing",
-}
-
 type OnlineUser = {
     userId: string
     socketId: string
@@ -96,12 +29,15 @@ type OnlineUser = {
     coords?: [number, number]
     speed?: number
     lastUpdate?: number
+    distance?: number
+    finished?: boolean
 }
 
 type RacerPosition = {
     coords: [number, number]
     lastUpdate: number
     speed: number
+    distance: number
 }
 
 function formatElapsedTime(seconds: number) {
@@ -285,6 +221,7 @@ export default function RacesOngoingPage() {
                 coords: [number, number]
                 timestamp: number
                 speed?: number
+                distance?: number
             }) => {
                 setRacerPositions((prev) => ({
                     ...prev,
@@ -292,6 +229,7 @@ export default function RacesOngoingPage() {
                         coords: update.coords,
                         lastUpdate: update.timestamp,
                         speed: update.speed ?? 0,
+                        distance: update.distance ?? 0,
                     },
                 }))
             }
@@ -310,6 +248,24 @@ export default function RacesOngoingPage() {
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    const liveLeaderboard = (liveRace?.participants || [])
+        .map((p) => {
+            const update = racerPositions[p.user.id]
+            return {
+                id: p.id,
+                name: p.user.full_name,
+                bib: p.bib_number,
+                distanceCovered: update?.distance ?? 0,
+                position: 0,
+                pace: update?.speed
+                    ? `${(60 / update.speed).toFixed(2)} min/km`
+                    : "–",
+                avatar: p.user.avatar_url,
+            }
+        })
+        .sort((a, b) => (b.distanceCovered || 0) - (a.distanceCovered || 0))
+        .map((p, index) => ({ ...p, position: index + 1 }))
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -559,124 +515,118 @@ export default function RacesOngoingPage() {
                                 </h2>
                             </div>
                             <div className="divide-y divide-gray-100">
-                                {dummyRaceData.participants
-                                    .sort((a, b) => a.position - b.position)
-                                    .map((participant, index) => (
-                                        <div
-                                            key={participant.id}
-                                            className={`p-4 hover:bg-gray-50 transition-colors ${
-                                                index < 3
-                                                    ? "bg-linear-to-r from-yellow-50/30 to-transparent"
-                                                    : ""
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div
-                                                    className={`w-12 h-12 rounded-lg bg-linear-to-b ${getPositionColor(
-                                                        participant.position
-                                                    )} flex items-center justify-center text-white font-bold shadow-lg shrink-0`}
-                                                >
-                                                    {participant.position <=
-                                                    3 ? (
-                                                        <span className="text-xl">
-                                                            {getPositionBadge(
-                                                                participant.position
-                                                            )}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-sm">
-                                                            #
-                                                            {
-                                                                participant.position
-                                                            }
-                                                        </span>
-                                                    )}
+                                {liveLeaderboard.map((participant, index) => (
+                                    <div
+                                        key={participant.id}
+                                        className={`p-4 hover:bg-gray-50 transition-colors ${
+                                            index < 3
+                                                ? "bg-linear-to-r from-yellow-50/30 to-transparent"
+                                                : ""
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div
+                                                className={`w-12 h-12 rounded-lg bg-linear-to-b ${getPositionColor(
+                                                    participant.position
+                                                )} flex items-center justify-center text-white font-bold shadow-lg shrink-0`}
+                                            >
+                                                {participant.position <= 3 ? (
+                                                    <span className="text-xl">
+                                                        {getPositionBadge(
+                                                            participant.position
+                                                        )}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-sm">
+                                                        #{participant.position}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                                                {participant.avatar ? (
+                                                    <img
+                                                        src={participant.avatar}
+                                                        alt={participant.name}
+                                                        className="w-full h-full rounded-full object-cover"
+                                                    />
+                                                ) : (
+                                                    getInitials(
+                                                        participant.name || ""
+                                                    )
+                                                )}
+                                            </div>
+
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <p className="text-sm font-bold text-gray-900 truncate">
+                                                        {participant.name}
+                                                    </p>
+                                                    <span className="px-2 py-0.5 bg-gray-100 rounded text-xs font-semibold text-gray-600">
+                                                        #{participant.bib}
+                                                    </span>
                                                 </div>
 
-                                                <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                                                    {participant.avatar ? (
-                                                        <img
-                                                            src={
-                                                                participant.avatar
-                                                            }
-                                                            alt={
-                                                                participant.name
-                                                            }
-                                                            className="w-full h-full rounded-full object-cover"
+                                                <div className="mb-2">
+                                                    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                                                        <div
+                                                            className="bg-linear-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500"
+                                                            style={{
+                                                                width: `${
+                                                                    (participant.distanceCovered /
+                                                                        (liveRace
+                                                                            ?.routes
+                                                                            ?.distance ??
+                                                                            1)) *
+                                                                    100
+                                                                }%`,
+                                                            }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-4 text-xs">
+                                                    <div className="flex items-center gap-1 text-gray-600">
+                                                        <Target
+                                                            size={12}
+                                                            className="text-blue-600"
                                                         />
-                                                    ) : (
-                                                        getInitials(
-                                                            participant.name
-                                                        )
-                                                    )}
-                                                </div>
-
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <p className="text-sm font-bold text-gray-900 truncate">
-                                                            {participant.name}
-                                                        </p>
-                                                        <span className="px-2 py-0.5 bg-gray-100 rounded text-xs font-semibold text-gray-600">
-                                                            #{participant.bib}
+                                                        <span className="font-semibold">
+                                                            {participant.distanceCovered.toFixed(
+                                                                1
+                                                            )}{" "}
+                                                            /{" "}
+                                                            {liveRace?.routes?.distance?.toFixed(
+                                                                1
+                                                            )}{" "}
+                                                            km
                                                         </span>
                                                     </div>
-
-                                                    <div className="mb-2">
-                                                        <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-                                                            <div
-                                                                className="bg-linear-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500"
-                                                                style={{
-                                                                    width: `${
-                                                                        (participant.distanceCovered /
-                                                                            dummyRaceData.distance) *
-                                                                        100
-                                                                    }%`,
-                                                                }}
-                                                            ></div>
-                                                        </div>
+                                                    <div className="flex items-center gap-1 text-gray-600">
+                                                        <Zap
+                                                            size={12}
+                                                            className="text-orange-500"
+                                                        />
+                                                        <span className="font-semibold">
+                                                            {participant.pace}
+                                                        </span>
                                                     </div>
-
-                                                    <div className="flex items-center gap-4 text-xs">
-                                                        <div className="flex items-center gap-1 text-gray-600">
-                                                            <Target
-                                                                size={12}
-                                                                className="text-blue-600"
-                                                            />
-                                                            <span className="font-semibold">
-                                                                {participant.distanceCovered.toFixed(
-                                                                    1
-                                                                )}{" "}
-                                                                /{" "}
-                                                                {
-                                                                    dummyRaceData.distance
-                                                                }{" "}
-                                                                km
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1 text-gray-600">
-                                                            <Zap
-                                                                size={12}
-                                                                className="text-orange-500"
-                                                            />
-                                                            <span className="font-semibold">
-                                                                {
-                                                                    participant.pace
-                                                                }
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-gray-500">
-                                                            {(
-                                                                (participant.distanceCovered /
-                                                                    dummyRaceData.distance) *
-                                                                100
-                                                            ).toFixed(0)}
-                                                            % complete
-                                                        </div>
+                                                    <div className="text-gray-500">
+                                                        {(
+                                                            (participant.distanceCovered /
+                                                                (liveRace
+                                                                    ?.routes
+                                                                    ?.distance ??
+                                                                    1)) *
+                                                            100
+                                                        ).toFixed(0)}
+                                                        % complete
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
