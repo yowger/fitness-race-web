@@ -18,7 +18,7 @@ import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import { useEndRace, useRace, useStartRace } from "../hooks/useRaces"
 import { useUser } from "../../auth/hooks/useUser"
-import { io } from "socket.io-client"
+import { io, type Socket } from "socket.io-client"
 
 const SOCKET_URL = import.meta.env.VITE_PUBLIC_SOCKET_URL
 
@@ -55,13 +55,14 @@ function formatElapsedTime(seconds: number) {
 }
 
 export default function RacesOngoingPage() {
+    const [socket, setSocket] = useState<Socket | null>(null)
+
     const { id } = useParams()
     const { data: user } = useUser()
     const { data: liveRace, refetch: refetchLiveRace } = useRace(id!)
     const [racerPositions, setRacerPositions] = useState<
         Record<string, RacerPosition>
     >({})
-    const socket = io(SOCKET_URL)
 
     const coords =
         liveRace?.routes?.geojson.features?.[0]?.geometry?.coordinates ?? []
@@ -82,6 +83,15 @@ export default function RacesOngoingPage() {
     const endRace = useEndRace()
 
     const [elapsedTime, setElapsedTime] = useState("00:00:00")
+
+    useEffect(() => {
+        const s = io(SOCKET_URL)
+        setSocket(s)
+
+        return () => {
+            s.disconnect()
+        }
+    }, [])
 
     useEffect(() => {
         if (!liveRace?.actual_start_time) return
@@ -118,7 +128,7 @@ export default function RacesOngoingPage() {
     ])
 
     async function handleStartRace() {
-        if (!id) return
+        if (!id || !socket) return
 
         try {
             const response = await startRace.mutateAsync(id)
@@ -135,7 +145,7 @@ export default function RacesOngoingPage() {
     }
 
     async function handleEndRace() {
-        if (!id) return
+        if (!id || !socket) return
 
         try {
             const response = await endRace.mutateAsync(id)
@@ -177,12 +187,9 @@ export default function RacesOngoingPage() {
     const [onlineAdmins, setOnlineAdmins] = useState<string[]>([])
     const [onlineRacers, setOnlineRacers] = useState<string[]>([])
     const [onlineGuests, setOnlineGuests] = useState<string[]>([])
-    console.log("🚀 ~ RacesOngoingPage ~ onlineAdmins:", onlineAdmins)
-    console.log("🚀 ~ RacesOngoingPage ~ onlineRacers:", onlineRacers)
-    console.log("🚀 ~ RacesOngoingPage ~ onlineGuests:", onlineGuests)
 
     useEffect(() => {
-        if (!id || !user) return
+        if (!id || !user || !socket) return
 
         socket.emit("joinRace", { raceId: id, userId: user.id })
 
@@ -247,7 +254,7 @@ export default function RacesOngoingPage() {
         }
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [socket])
 
     const liveLeaderboard = (liveRace?.participants || [])
         .map((p) => {

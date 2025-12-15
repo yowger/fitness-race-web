@@ -164,55 +164,19 @@ const RouteDetailsPage = () => {
 
                     <div className="space-y-6">
                         <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
-                            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">
-                                Created By
-                            </h3>
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-semibold shrink-0">
-                                    {route.users?.avatar_url ? (
-                                        <img
-                                            src={route.users.avatar_url}
-                                            alt={route.users.full_name}
-                                            className="w-full h-full rounded-full object-cover"
-                                        />
-                                    ) : (
-                                        getInitials(
-                                            route.users?.full_name ?? "Unknown"
-                                        )
-                                    )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-base font-semibold text-slate-900">
-                                        {route.users?.full_name ?? "Unknown"}
-                                    </p>
-                                    <p className="text-sm text-slate-600 truncate">
-                                        {route.users?.email}
-                                    </p>
-                                </div>
+                            <div className="flex justify-between items-center mb-5">
+                                <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                    Route Information
+                                </h3>
+
+                                {/* <button
+                                    onClick={downloadGPX}
+                                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                                >
+                                    Download GPX
+                                </button> */}
                             </div>
 
-                            <div className="mt-4 pt-4 border-t border-slate-100">
-                                <div className="flex items-center gap-2">
-                                    <Calendar
-                                        size={16}
-                                        className="text-slate-500"
-                                    />
-                                    <div>
-                                        <p className="text-xs text-slate-500">
-                                            Created on
-                                        </p>
-                                        <p className="text-sm font-medium text-slate-900">
-                                            {formatDate(route.created_at)}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
-                            <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-5">
-                                Route Information
-                            </h3>
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between py-3 border-b border-slate-100">
                                     <span className="text-sm text-slate-600 font-medium">
@@ -258,6 +222,52 @@ const RouteDetailsPage = () => {
                                     <span className="text-right text-sm font-semibold text-slate-900">
                                         {route.end_address || "Unknown"}
                                     </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
+                            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">
+                                Created By
+                            </h3>
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-semibold shrink-0">
+                                    {route.users?.avatar_url ? (
+                                        <img
+                                            src={route.users.avatar_url}
+                                            alt={route.users.full_name}
+                                            className="w-full h-full rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        getInitials(
+                                            route.users?.full_name ?? "Unknown"
+                                        )
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-base font-semibold text-slate-900">
+                                        {route.users?.full_name ?? "Unknown"}
+                                    </p>
+                                    <p className="text-sm text-slate-600 truncate">
+                                        {route.users?.email}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 pt-4 border-t border-slate-100">
+                                <div className="flex items-center gap-2">
+                                    <Calendar
+                                        size={16}
+                                        className="text-slate-500"
+                                    />
+                                    <div>
+                                        <p className="text-xs text-slate-500">
+                                            Created on
+                                        </p>
+                                        <p className="text-sm font-medium text-slate-900">
+                                            {formatDate(route.created_at)}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>

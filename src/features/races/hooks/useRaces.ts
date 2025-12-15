@@ -44,23 +44,42 @@ export interface Participant {
 }
 
 export interface Tracking {
+    bib_number?: number
     id: string
     race_id: string
     user_id: string
+    users: {
+        full_name: string
+    }
     latitude: number
     longitude: number
     recorded_at: string
 }
 
-export interface Result {
+export interface RaceResult {
     id: string
+    bib_number?: number
+    users: {
+        id: string
+        full_name: string
+        email: string
+    }
     race_id: string
     user_id: string
-    finish_time: string
+    finish_time: number
     position?: number
     recorded_at: string
     user?: UserInfo
+    status: "Finished" | "Did Not Join" | "Disqualified" | "DNS" | "DNF"
 }
+
+/*
+    Finished	Racer completed the race normally.
+    Did Not Join	Racer was registered but did not start.
+    Disqualified	Racer broke rules / cheated / invalid attempt.
+    DNS (Did Not Start)	Similar to Did Not Join, optional shorthand.
+    DNF (Did Not Finish)	Started but did not complete the race.
+*/
 
 export interface RaceFilters {
     userId?: string
@@ -140,12 +159,16 @@ export const getLatestTracking = async (
     return res.data
 }
 
-export const addResult = async (input: Omit<Result, "id">): Promise<Result> => {
+export const addResult = async (
+    input: Omit<RaceResult, "id">
+): Promise<RaceResult> => {
     const res = await privateApi.post("/api/group-races/results", input)
     return res.data
 }
 
-export const getResultsByRace = async (raceId: string): Promise<Result[]> => {
+export const getResultsByRace = async (
+    raceId: string
+): Promise<RaceResult[]> => {
     const res = await privateApi.get(`/api/group-races/${raceId}/results`)
     return res.data
 }

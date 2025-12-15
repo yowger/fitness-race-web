@@ -46,6 +46,12 @@ privateApi.interceptors.response.use(
         if (error instanceof AxiosError) {
             if (error.response?.status === 401) {
                 supabase.auth.signOut()
+
+                const sessionKey = Object.keys(localStorage).find(
+                    (key) =>
+                        key.startsWith("sb-") && key.endsWith("-auth-token")
+                )
+                if (sessionKey) localStorage.removeItem(sessionKey)
             }
         }
 
