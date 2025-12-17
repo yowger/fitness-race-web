@@ -85,7 +85,7 @@ export interface RaceFilters {
     userId?: string
     createdBy?: string
     name?: string
-    status?: "upcoming" | "ongoing" | "finished"
+    status?: "upcoming" | "ongoing" | "finished" | "complete"
     startDate?: string
     endDate?: string
     limit?: number

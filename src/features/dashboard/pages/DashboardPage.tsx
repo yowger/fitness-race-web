@@ -2,7 +2,6 @@ import {
     Calendar,
     TrendingUp,
     Trophy,
-    MapPin,
     Users,
     Clock,
     ArrowRight,
@@ -14,7 +13,7 @@ import { Link } from "react-router-dom"
 export default function DashboardPage() {
     const { data: user } = useUser()
     const { data: myFinishedRaces } = useRaces({
-        status: "finished",
+        status: "complete",
         userId: user?.id,
     })
     const { data: myJoinedRaces } = useRaces({
@@ -171,13 +170,17 @@ export default function DashboardPage() {
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2 text-gray-600">
-                                                <MapPin
+                                                <Users
                                                     size={16}
                                                     className="text-blue-600"
                                                 />
                                                 <span>
-                                                    {race.routes?.name ||
-                                                        "Unknown Route"}
+                                                    {race.participants
+                                                        ?.length || 0}{" "}
+                                                    /{" "}
+                                                    {race.max_participants ||
+                                                        "∞"}{" "}
+                                                    participants
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2 text-gray-600">
@@ -194,9 +197,13 @@ export default function DashboardPage() {
                                                 </span>
                                             </div>
                                         </div>
-                                        <button className="mt-4 w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium text-sm transition-colors">
-                                            View Details
-                                        </button>
+                                        <Link
+                                            to={`/dashboard/races/${race.id}/complete`}
+                                        >
+                                            <button className="mt-4 w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium text-sm transition-colors">
+                                                View Details
+                                            </button>
+                                        </Link>
                                     </div>
                                 </div>
                             ))
@@ -306,7 +313,9 @@ export default function DashboardPage() {
                                             </span>
                                         </div>
 
-                                        <Link to={`/dashboard/races/${race.id}`}>
+                                        <Link
+                                            to={`/dashboard/races/${race.id}`}
+                                        >
                                             <button className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors">
                                                 View Race
                                             </button>
