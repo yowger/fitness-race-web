@@ -1,19 +1,28 @@
 import { Fragment, useState } from "react"
 import Map, { Marker, Source, Layer } from "@vis.gl/react-maplibre"
 import { CheckCircle, AlertCircle, MapPin, Flag, Play } from "lucide-react"
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 
-import { useRace, useResults, useTracking } from "../hooks/useRaces"
+import {
+    usePublishRaceResults,
+    useRace,
+    useResults,
+    useTracking,
+    type RaceResult,
+} from "../hooks/useRaces"
 import { useUser } from "../../auth/hooks/useUser"
 import { ResultsTable } from "../components/ResultsTable"
 
 export default function RacesResultsPage() {
     const { id: raceId } = useParams()
-
+    const navigate = useNavigate()
     const { data: user } = useUser()
     const { data: liveRace } = useRace(raceId!)
     const { data: raceTracking } = useTracking(raceId!)
     const { data: results } = useResults(raceId!)
+    const { mutateAsync: publishResults } = usePublishRaceResults()
+
+    const [editedResults, setEditedResults] = useState<RaceResult[]>([])
 
     const isHost = liveRace?.created_by_user?.id === user?.id
     const participants = liveRace?.participants ?? []
@@ -42,13 +51,35 @@ export default function RacesResultsPage() {
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
     const confirmResults = async () => {
+        if (!raceId) return
+
         setIsPublishing(true)
-        await new Promise((r) => setTimeout(r, 2000))
-        setIsPublishing(false)
+
+        try {
+            const source = editedResults.length ? editedResults : results ?? []
+
+            await publishResults({
+                race_id: raceId,
+                results: source.map((r, index) => ({
+                    user_id: r.user_id,
+                    status: r.status,
+                    finish_time: r.finish_time ?? null,
+                    position: r.status === "Finished" ? index + 1 : null,
+                })),
+            })
+
+            navigate(`/races/${raceId}/complete`)
+        } finally {
+            setIsPublishing(false)
+        }
     }
 
     const onRowClick = (userId: string) => setSelectedUserId(userId)
     const onRowHover = (userId: string | null) => setHoveredUserId(userId)
+
+    const onResultsChange = (results: RaceResult[]) => {
+        setEditedResults(results)
+    }
 
     if (!isHost) {
         return (
@@ -323,9 +354,7 @@ export default function RacesResultsPage() {
                                 selectedUserId={selectedUserId}
                                 onRowHover={onRowHover}
                                 onRowClick={onRowClick}
-                                onResultsChange={(results) => {
-                                    console.log("results changed", results)
-                                }}
+                                onResultsChange={onResultsChange}
                             />
                         </div>
                     </div>

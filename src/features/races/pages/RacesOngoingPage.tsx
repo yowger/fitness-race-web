@@ -15,7 +15,7 @@ import {
     Eye,
 } from "lucide-react"
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 import { useEndRace, useRace, useStartRace } from "../hooks/useRaces"
 import { useUser } from "../../auth/hooks/useUser"
 import { io, type Socket } from "socket.io-client"
@@ -397,10 +397,13 @@ export default function RacesOngoingPage() {
                                     )}
 
                                     {liveRace?.status === "finished" && (
+                                        <Link to={`/dashboard/races/${liveRace?.id}/results`}>
                                         <button className="px-4 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 border border-white/30">
                                             <Download size={16} />
-                                            Export Data
+                                            {/* Export Data */}
+                                            Edit Results
                                         </button>
+                                        </Link>
                                     )}
                                 </div>
                             </div>

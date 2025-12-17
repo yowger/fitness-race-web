@@ -305,3 +305,51 @@ export const useEndRace = () => {
         },
     })
 }
+
+export type RaceResultStatus =
+    | "Finished"
+    | "DNF"
+    | "DNS"
+    | "Disqualified"
+    | "Did Not Join"
+
+export interface PublishResultItem {
+    user_id: string
+    position?: number | null
+    status?: RaceResultStatus
+    finish_time?: number | null
+}
+
+export interface PublishResultsPayload {
+    race_id: string
+    results: PublishResultItem[]
+}
+
+export const publishRaceResults = async (
+    payload: PublishResultsPayload
+): Promise<{ message: string }> => {
+    const res = await privateApi.post(
+        "/api/group-races/results/publish",
+        payload
+    )
+    return res.data
+}
+
+export const usePublishRaceResults = () => {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: publishRaceResults,
+        onSuccess: (_, variables) => {
+            const raceId = variables.race_id
+
+            queryClient.invalidateQueries({ queryKey: ["race", raceId] })
+            queryClient.invalidateQueries({
+                queryKey: ["race-results", raceId],
+            })
+            queryClient.invalidateQueries({
+                queryKey: ["race-participants", raceId],
+            })
+        },
+    })
+}

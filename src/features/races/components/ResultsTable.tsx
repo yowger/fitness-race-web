@@ -56,6 +56,20 @@ function msToHMS(ms: number): string {
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
 }
 
+function hmsToMs(value: string): number | null {
+    const parts = value.split(":").map(Number)
+    if (parts.some(isNaN)) return null
+
+    const [h = 0, m = 0, s = 0] =
+        parts.length === 3
+            ? parts
+            : parts.length === 2
+            ? [0, parts[0], parts[1]]
+            : [0, 0, parts[0]]
+
+    return (h * 3600 + m * 60 + s) * 1000
+}
+
 function SortableRow({
     r,
     index,
@@ -67,8 +81,10 @@ function SortableRow({
     onRowHover,
     onRowClick,
     onStatusChange,
+    onFinishTimeChange,
 }: SortableRowProps & {
     onStatusChange?: (userId: string, newStatus: RaceResult["status"]) => void
+    onFinishTimeChange?: (userId: string, finishTimeMs: number) => void
 }) {
     const { attributes, listeners, setNodeRef, transform, transition } =
         useSortable({ id: r.user_id })
@@ -136,7 +152,7 @@ function SortableRow({
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center gap-2">
-                    <span className="font-mono text-gray-700">
+                    <span className="text-xs font-mono px-2 py-1 rounded-sm text-white bg-gray-400">
                         {r.bib_number}
                     </span>
                     <span className="text-sm font-medium text-gray-900">
@@ -145,9 +161,25 @@ function SortableRow({
                 </div>
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900 font-mono">
-                    <td>{r.finish_time ? msToHMS(r.finish_time) : "-"}</td>
-                </div>
+                <input
+                    type="text"
+                    value={r.finish_time ? msToHMS(r.finish_time) : ""}
+                    disabled={r.status !== "Finished"}
+                    placeholder="HH:MM:SS"
+                    className={`w-24 px-2 py-1 text-xs font-mono rounded border
+        ${
+            r.status === "Finished"
+                ? "border-gray-300 focus:ring-1 focus:ring-blue-500"
+                : "border-transparent bg-gray-100 text-gray-400 cursor-not-allowed"
+        }`}
+                    onChange={(e) => {
+                        const value = e.target.value
+                        const ms = hmsToMs(value)
+                        if (ms !== null) {
+                            onFinishTimeChange?.(r.user_id, ms)
+                        }
+                    }}
+                />
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
                 <select
@@ -240,6 +272,14 @@ export function ResultsTable({
         onResultsChange?.(updated)
     }
 
+    const handleFinishTimeChange = (userId: string, finishTime: number) => {
+        const updated = rows.map((r) =>
+            r.user_id === userId ? { ...r, finish_time: finishTime } : r
+        )
+        setRows(updated)
+        onResultsChange?.(updated)
+    }
+
     const sensors = useSensors(useSensor(PointerSensor))
 
     return (
@@ -292,6 +332,7 @@ export function ResultsTable({
                                 onRowHover={onRowHover}
                                 onRowClick={onRowClick}
                                 onStatusChange={handleStatusChange}
+                                onFinishTimeChange={handleFinishTimeChange}
                             />
                         ))}
                     </tbody>

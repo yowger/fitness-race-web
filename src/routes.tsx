@@ -88,6 +88,10 @@ const router = createBrowserRouter([
                                         path: ":id/results",
                                         element: <RacesResultsPage />,
                                     },
+                                    {
+                                        path: ":id/complete",
+                                        element: <RacesResultsPage />,
+                                    },
                                 ],
                             },
                         ],
