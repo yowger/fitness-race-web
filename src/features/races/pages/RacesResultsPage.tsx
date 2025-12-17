@@ -68,7 +68,7 @@ export default function RacesResultsPage() {
                 })),
             })
 
-            navigate(`/races/${raceId}/complete`)
+            navigate(`/dashboard/races/${raceId}/complete`)
         } finally {
             setIsPublishing(false)
         }

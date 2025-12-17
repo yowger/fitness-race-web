@@ -18,6 +18,7 @@ import RacesResultsPage from "./features/races/pages/RacesResultsPage"
 import RaceCreatePage from "./features/races/pages/RacesFormPage"
 import DashboardPage from "./features/dashboard/pages/DashboardPage"
 import RacesOngoingPage from "./features/races/pages/RacesOngoingPage"
+import RacesCompletePage from "./features/races/pages/RacesCompletePage"
 
 const router = createBrowserRouter([
     {
@@ -90,7 +91,7 @@ const router = createBrowserRouter([
                                     },
                                     {
                                         path: ":id/complete",
-                                        element: <RacesResultsPage />,
+                                        element: <RacesCompletePage />,
                                     },
                                 ],
                             },
