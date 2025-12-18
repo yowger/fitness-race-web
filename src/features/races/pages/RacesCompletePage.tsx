@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { Fragment, useState } from "react"
 import Map, { Marker, Source, Layer } from "@vis.gl/react-maplibre"
 import {
     MapPin,
@@ -13,7 +13,7 @@ import {
     Award,
     Trophy,
 } from "lucide-react"
-import { useRace, useResults } from "../hooks/useRaces"
+import { useRace, useResults, useTracking } from "../hooks/useRaces"
 import { useParams } from "react-router-dom"
 
 export default function RacesCompletePage() {
@@ -21,9 +21,10 @@ export default function RacesCompletePage() {
     const [activeTab, setActiveTab] = useState<"all" | "finished" | "dnf">(
         "all"
     )
-
     const { data: race, isLoading: raceLoading } = useRace(raceId!)
     const { data: results, isLoading: resultsLoading } = useResults(raceId!)
+    const { data: raceTracking } = useTracking(raceId!)
+    const [activeUserId, setActiveUserId] = useState<string | null>(null)
 
     if (raceLoading || resultsLoading) return <div>Loading...</div>
     if (!race || !results) return <div>No race data found</div>
@@ -337,6 +338,83 @@ export default function RacesCompletePage() {
                             }}
                             attributionControl={false}
                         >
+                            {raceTracking?.map((t, i) => {
+                                const userTracks = raceTracking.filter(
+                                    (u) => u.user_id === t.user_id
+                                )
+                                const coordinates = userTracks.map((u) => [
+                                    u.longitude,
+                                    u.latitude,
+                                ])
+                                if (!coordinates.length) return null
+
+                                const lastPos =
+                                    coordinates[coordinates.length - 1]
+
+                                // const isActive =
+                                //     hoveredUserId === t.user_id ||
+                                //     selectedUserId === t.user_id
+                                const isActive = false
+
+                                return (
+                                    <Fragment key={`track-${t.user_id}-${i}`}>
+                                        <Source
+                                            id={`track-${t.user_id}`}
+                                            type="geojson"
+                                            data={{
+                                                type: "Feature",
+                                                geometry: {
+                                                    type: "LineString",
+                                                    coordinates,
+                                                },
+                                                properties: {
+                                                    user_id: t.user_id,
+                                                    name: t.users.full_name,
+                                                    bib_number: t.bib_number,
+                                                },
+                                            }}
+                                        >
+                                            <Layer
+                                                id={`track-line-${t.user_id}`}
+                                                type="line"
+                                                paint={{
+                                                    "line-color": isActive
+                                                        ? "#1a73e8"
+                                                        : "#888",
+                                                    "line-width": isActive
+                                                        ? 6
+                                                        : 3,
+                                                    "line-opacity": 0.8,
+                                                }}
+                                            />
+                                        </Source>
+
+                                        <Marker
+                                            longitude={lastPos[0]}
+                                            latitude={lastPos[1]}
+                                        >
+                                            <div
+                                                className={`w-6 h-6 rounded-full flex items-center justify-center border-2 border-white transition-all ${
+                                                    isActive
+                                                        ? "bg-blue-700 scale-125"
+                                                        : "bg-blue-400"
+                                                }`}
+                                            >
+                                                <span className="text-white text-sm font-bold">
+                                                    {t.bib_number ?? "?"}
+                                                </span>
+
+                                                {isActive && (
+                                                    <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap">
+                                                        {t.users.full_name}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </Marker>
+                                    </Fragment>
+                                )
+                            })}
+
                             <Source
                                 id="route"
                                 type="geojson"
@@ -456,47 +534,55 @@ export default function RacesCompletePage() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {displayedParticipants.map((p) => {
-                                    return (
-                                        <tr
-                                            key={p.id}
-                                            className="hover:bg-gray-50 transition-colors"
-                                        >
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {p.position || "—"}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {p.bib_number}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {p.users.full_name}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap font-mono">
-                                                {msToHMS(p.finish_time)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap font-mono">
-                                                {calculateGap(
-                                                    p.finish_time,
-                                                    leaderTime
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap font-mono">
-                                                {calculatePace(p.finish_time)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span
-                                                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                                        p.status === "Finished"
-                                                            ? "bg-green-100 text-green-800"
-                                                            : "bg-red-100 text-red-800"
-                                                    }`}
-                                                >
-                                                    {p.status}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
+                                {displayedParticipants.map((p) => (
+                                    <tr
+                                        key={p.id}
+                                        className={`transition-colors ${
+                                            activeUserId === p.user_id
+                                                ? "bg-blue-50"
+                                                : "hover:bg-gray-50"
+                                        }`}
+                                        onMouseEnter={() =>
+                                            setActiveUserId(p.user_id)
+                                        }
+                                        onMouseLeave={() =>
+                                            setActiveUserId(null)
+                                        }
+                                    >
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {p.position || "—"}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {p.bib_number}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {p.users.full_name}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap font-mono">
+                                            {msToHMS(p.finish_time)}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap font-mono">
+                                            {calculateGap(
+                                                p.finish_time,
+                                                leaderTime
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap font-mono">
+                                            {calculatePace(p.finish_time)}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span
+                                                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                    p.status === "Finished"
+                                                        ? "bg-green-100 text-green-800"
+                                                        : "bg-red-100 text-red-800"
+                                                }`}
+                                            >
+                                                {p.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>

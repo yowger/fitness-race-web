@@ -64,6 +64,7 @@ export default function RacesOngoingPage() {
         Record<string, RacerPosition>
     >({})
 
+    const isRacer = liveRace?.participants?.some((p) => p.user.id === user?.id)
     const coords =
         liveRace?.routes?.geojson.features?.[0]?.geometry?.coordinates ?? []
     let flatCoords: [number, number][] = []
@@ -92,6 +93,41 @@ export default function RacesOngoingPage() {
             s.disconnect()
         }
     }, [])
+
+    useEffect(() => {
+        if (!isRacer) return
+        console.log("Setting up geolocation watchPosition")
+        if (!socket || !user || !id) return
+        console.log("Geolocation tracking started for user:", user.id)
+        if (!("geolocation" in navigator)) return
+        console.log("Geolocation is available")
+
+        const watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                console.log("Emitting participantUpdate:", {
+                    userId: user.id,
+                    raceId: id,
+                    coords: [pos.coords.longitude, pos.coords.latitude],
+                })
+
+                socket.emit("participantUpdate", {
+                    userId: user.id,
+                    raceId: id,
+                    coords: [pos.coords.longitude, pos.coords.latitude],
+                    speed: pos.coords.speed ?? 0,
+                    timestamp: Date.now(),
+                })
+            },
+            (err) => console.error(err),
+            {
+                enableHighAccuracy: true,
+                maximumAge: 1000,
+                timeout: 5000,
+            }
+        )
+
+        return () => navigator.geolocation.clearWatch(watchId)
+    }, [socket, user, id, isRacer])
 
     useEffect(() => {
         if (!liveRace?.actual_start_time) return
@@ -397,12 +433,14 @@ export default function RacesOngoingPage() {
                                     )}
 
                                     {liveRace?.status === "finished" && (
-                                        <Link to={`/dashboard/races/${liveRace?.id}/results`}>
-                                        <button className="px-4 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 border border-white/30">
-                                            <Download size={16} />
-                                            {/* Export Data */}
-                                            Edit Results
-                                        </button>
+                                        <Link
+                                            to={`/dashboard/races/${liveRace?.id}/results`}
+                                        >
+                                            <button className="px-4 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 border border-white/30">
+                                                <Download size={16} />
+                                                {/* Export Data */}
+                                                Edit Results
+                                            </button>
                                         </Link>
                                     )}
                                 </div>
