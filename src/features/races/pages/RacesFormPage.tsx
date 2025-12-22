@@ -16,6 +16,7 @@ import { useCreateRace } from "../hooks/useRaces"
 import { useNavigate } from "react-router-dom"
 import { io } from "socket.io-client"
 import { useCloudinaryBulkUpload } from "../../../api/use-upload-bulk"
+import { useCreateRaceEvent } from "../api/useRaceEvents"
 
 const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -41,9 +42,11 @@ const getInitials = (name: string) =>
 const SOCKET_URL = import.meta.env.VITE_PUBLIC_SOCKET_URL
 
 export default function RaceCreatePage() {
+    const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
     const socket = io(SOCKET_URL)
     const { upload } = useCloudinaryBulkUpload()
+    const createRaceEventMutation = useCreateRaceEvent()
 
     const [sheetOpen, setSheetOpen] = useState(false)
     const [selectedRouteId, setSelectedRouteId] = useState<string>("")
@@ -64,6 +67,8 @@ export default function RaceCreatePage() {
     const handleCreate = async (
         values: RaceFormValues & { routeId: string }
     ) => {
+        setLoading(true)
+
         try {
             let bannerUrl = ""
 
@@ -81,8 +86,22 @@ export default function RaceCreatePage() {
                     route_id: values.routeId,
                 },
                 {
-                    onSuccess: (data) => {
+                    onSuccess: async (data) => {
                         const raceId = data.id
+
+                        if (values.events?.length) {
+                            await Promise.all(
+                                values.events.map((event) =>
+                                    createRaceEventMutation.mutateAsync({
+                                        race_id: raceId,
+                                        name: event.name,
+                                        type: event.type,
+                                        scheduled_time: event.scheduledTime,
+                                    })
+                                )
+                            )
+                        }
+
                         socket.emit("createRace", { raceId })
                         setSelectedRouteId("")
                         toast.success("Race created successfully.")
@@ -95,6 +114,8 @@ export default function RaceCreatePage() {
             if (error instanceof Error) {
                 toast.error("Failed to upload banner image.")
             }
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -251,6 +272,7 @@ export default function RaceCreatePage() {
                     setRouteId={setSelectedRouteId}
                     onSubmit={handleCreate}
                     onToggleSheet={handleToggleSheet}
+                    isLoading={loading}
                 />
             </div>
         </div>

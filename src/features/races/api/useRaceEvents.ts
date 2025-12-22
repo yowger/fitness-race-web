@@ -78,7 +78,7 @@ export const useDeleteRaceEvent = () => {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: deleteRaceEvent,
-        onSuccess: (_, id, context: { raceId: string }) => {
+        onSuccess: (_, _id, context: { raceId: string }) => {
             queryClient.invalidateQueries({
                 queryKey: ["race-events", context.raceId],
             })
