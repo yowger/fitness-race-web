@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "../../../components/ui/button"
 import {
@@ -20,6 +20,13 @@ import {
     Users,
     ChevronRight,
     Loader2,
+    Plus,
+    Trash2,
+    Clock,
+    Flag,
+    UserCheck,
+    Trophy,
+    Milestone,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -32,9 +39,30 @@ const raceFormSchema = z.object({
         .optional(),
     maxParticipants: z.string(),
     startTime: z.string(),
+    events: z
+        .array(
+            z.object({
+                name: z.string().min(1, "Event name is required"),
+                type: z.enum(["registration", "race", "awards", "other"]),
+                scheduledTime: z.string().min(1, "Time is required"),
+            })
+        )
+        .optional(),
 })
 
 export type RaceFormValues = z.infer<typeof raceFormSchema>
+
+const EVENT_TYPES = [
+    {
+        value: "registration",
+        label: "Registration",
+        icon: UserCheck,
+        color: "blue",
+    },
+    { value: "race", label: "Race Start", icon: Flag, color: "green" },
+    { value: "awards", label: "Awards", icon: Trophy, color: "amber" },
+    { value: "other", label: "Other", icon: Milestone, color: "gray" },
+] as const
 
 export function RaceForm({
     route,
@@ -62,7 +90,13 @@ export function RaceForm({
             description: "",
             maxParticipants: "0",
             startTime: "",
+            events: [],
         },
+    })
+
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "events",
     })
 
     const handleSubmit = (values: RaceFormValues) => {
@@ -73,6 +107,10 @@ export function RaceForm({
     const clearBanner = () => {
         form.setValue("bannerFile", undefined)
         setPreview(null)
+    }
+
+    const getEventTypeConfig = (type: string) => {
+        return EVENT_TYPES.find((t) => t.value === type) || EVENT_TYPES[3]
     }
 
     return (
@@ -372,6 +410,253 @@ export function RaceForm({
                                     )}
                                 />
                             </div>
+
+                            <div className="border-t border-gray-200" />
+
+                            {/* Events Timeline Section */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-sm font-medium text-gray-700">
+                                            Event timeline
+                                        </h3>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Add key events and milestones for
+                                            your race day
+                                        </p>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            append({
+                                                name: "",
+                                                type: "other",
+                                                scheduledTime: "",
+                                            })
+                                        }
+                                        className="h-9 text-sm font-medium text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+                                    >
+                                        <Plus size={16} className="mr-2" />
+                                        Add event
+                                    </Button>
+                                </div>
+
+                                {fields.length === 0 ? (
+                                    <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 py-12 px-6 text-center">
+                                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                                            <Clock
+                                                size={20}
+                                                className="text-gray-400"
+                                            />
+                                        </div>
+                                        <p className="text-sm font-medium text-gray-700 mb-1">
+                                            No events added yet
+                                        </p>
+                                        <p className="text-xs text-gray-500 mb-4">
+                                            Create a timeline for registration,
+                                            race start, awards, and more
+                                        </p>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() =>
+                                                append({
+                                                    name: "",
+                                                    type: "other",
+                                                    scheduledTime: "",
+                                                })
+                                            }
+                                            className="text-sm"
+                                        >
+                                            <Plus size={16} className="mr-2" />
+                                            Add your first event
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {fields.map((field, index) => {
+                                            const eventType = form.watch(
+                                                `events.${index}.type`
+                                            )
+                                            const config = getEventTypeConfig(
+                                                eventType || ""
+                                            )
+                                            const Icon = config.icon
+
+                                            return (
+                                                <div
+                                                    key={field.id}
+                                                    className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 transition-colors"
+                                                >
+                                                    <div className="flex gap-3">
+                                                        {/* Icon */}
+                                                        <div
+                                                            className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                                                                config.color ===
+                                                                "blue"
+                                                                    ? "bg-blue-50"
+                                                                    : config.color ===
+                                                                      "green"
+                                                                    ? "bg-green-50"
+                                                                    : config.color ===
+                                                                      "amber"
+                                                                    ? "bg-amber-50"
+                                                                    : "bg-gray-100"
+                                                            }`}
+                                                        >
+                                                            <Icon
+                                                                size={18}
+                                                                className={`${
+                                                                    config.color ===
+                                                                    "blue"
+                                                                        ? "text-blue-600"
+                                                                        : config.color ===
+                                                                          "green"
+                                                                        ? "text-green-600"
+                                                                        : config.color ===
+                                                                          "amber"
+                                                                        ? "text-amber-600"
+                                                                        : "text-gray-600"
+                                                                }`}
+                                                            />
+                                                        </div>
+
+                                                        {/* Form Fields */}
+                                                        <div className="flex-1 space-y-3">
+                                                            <div className="grid md:grid-cols-2 gap-3">
+                                                                <FormField
+                                                                    control={
+                                                                        form.control
+                                                                    }
+                                                                    name={`events.${index}.name`}
+                                                                    render={({
+                                                                        field,
+                                                                    }) => (
+                                                                        <FormItem>
+                                                                            <FormLabel className="text-xs font-medium text-gray-600">
+                                                                                Event
+                                                                                name
+                                                                            </FormLabel>
+                                                                            <FormControl>
+                                                                                <Input
+                                                                                    placeholder="Registration Opens"
+                                                                                    className="h-10 text-sm border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                                                    {...field}
+                                                                                />
+                                                                            </FormControl>
+                                                                            <FormMessage className="text-xs" />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+
+                                                                <FormField
+                                                                    control={
+                                                                        form.control
+                                                                    }
+                                                                    name={`events.${index}.type`}
+                                                                    render={({
+                                                                        field,
+                                                                    }) => (
+                                                                        <FormItem>
+                                                                            <FormLabel className="text-xs font-medium text-gray-600">
+                                                                                Type
+                                                                            </FormLabel>
+                                                                            <FormControl>
+                                                                                <select
+                                                                                    {...field}
+                                                                                    className="w-full h-10 px-3 text-sm border border-gray-300 rounded-md bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none"
+                                                                                >
+                                                                                    {EVENT_TYPES.map(
+                                                                                        (
+                                                                                            type
+                                                                                        ) => (
+                                                                                            <option
+                                                                                                key={
+                                                                                                    type.value
+                                                                                                }
+                                                                                                value={
+                                                                                                    type.value
+                                                                                                }
+                                                                                            >
+                                                                                                {
+                                                                                                    type.label
+                                                                                                }
+                                                                                            </option>
+                                                                                        )
+                                                                                    )}
+                                                                                </select>
+                                                                            </FormControl>
+                                                                            <FormMessage className="text-xs" />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+                                                            </div>
+
+                                                            <div className="flex gap-3">
+                                                                <FormField
+                                                                    control={
+                                                                        form.control
+                                                                    }
+                                                                    name={`events.${index}.scheduledTime`}
+                                                                    render={({
+                                                                        field,
+                                                                    }) => (
+                                                                        <FormItem className="flex-1">
+                                                                            <FormLabel className="text-xs font-medium text-gray-600">
+                                                                                Scheduled
+                                                                                time
+                                                                            </FormLabel>
+                                                                            <FormControl>
+                                                                                <div className="relative">
+                                                                                    <Clock
+                                                                                        size={
+                                                                                            14
+                                                                                        }
+                                                                                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                                                                                    />
+                                                                                    <Input
+                                                                                        type="datetime-local"
+                                                                                        className="h-10 pl-9 text-sm border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                                                        {...field}
+                                                                                    />
+                                                                                </div>
+                                                                            </FormControl>
+                                                                            <FormMessage className="text-xs" />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+
+                                                                <div className="flex items-end">
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={() =>
+                                                                            remove(
+                                                                                index
+                                                                            )
+                                                                        }
+                                                                        className="h-10 w-10 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                                                    >
+                                                                        <Trash2
+                                                                            size={
+                                                                                16
+                                                                            }
+                                                                        />
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="bg-gray-50 px-8 py-5 border-t border-gray-200 flex items-center justify-end gap-3">
@@ -385,7 +670,7 @@ export function RaceForm({
                             </Button>
                             <Button
                                 type="submit"
-                                disabled={!route}
+                                disabled={!route || isLoading}
                                 className="h-11 px-8 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isLoading && (
@@ -394,7 +679,6 @@ export function RaceForm({
                                         aria-hidden="true"
                                     />
                                 )}
-
                                 {isLoading ? "Creating race..." : "Create race"}
                             </Button>
                         </div>
