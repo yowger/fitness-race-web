@@ -3,13 +3,11 @@ import InfiniteScroll from "react-infinite-scroll-component"
 import { Image } from "lucide-react"
 import { RaceForm, type RaceFormValues } from "../components/RaceForm"
 import { Card, CardContent } from "../../../components/ui/card"
-import { Button } from "../../../components/ui/button"
 import {
     Sheet,
     SheetContent,
     SheetHeader,
     SheetTitle,
-    SheetTrigger,
 } from "../../../components/ui/sheet"
 import { useRoutes } from "../../routes/api/useRoutes"
 
@@ -17,6 +15,7 @@ import { toast } from "sonner"
 import { useCreateRace } from "../hooks/useRaces"
 import { useNavigate } from "react-router-dom"
 import { io } from "socket.io-client"
+import { useCloudinaryBulkUpload } from "../../../api/use-upload-bulk"
 
 const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -44,6 +43,7 @@ const SOCKET_URL = import.meta.env.VITE_PUBLIC_SOCKET_URL
 export default function RaceCreatePage() {
     const navigate = useNavigate()
     const socket = io(SOCKET_URL)
+    const { upload } = useCloudinaryBulkUpload()
 
     const [sheetOpen, setSheetOpen] = useState(false)
     const [selectedRouteId, setSelectedRouteId] = useState<string>("")
@@ -61,30 +61,45 @@ export default function RaceCreatePage() {
     const routes = data?.pages.flat() ?? []
     const selectedRoute = routes.find((r) => r.id === selectedRouteId)
 
-    const handleCreate = (values: RaceFormValues & { routeId: string }) => {
-        createRaceMutation.mutate(
-            {
-                name: values.name,
-                max_participants: Number(values.maxParticipants || 0),
-                start_time: values.startTime || new Date().toISOString(),
-                route_id: values.routeId,
-            },
-            {
-                onSuccess: (data) => {
-                    const raceId = data.id
+    const handleCreate = async (
+        values: RaceFormValues & { routeId: string }
+    ) => {
+        try {
+            let bannerUrl = ""
 
-                    socket.emit("createRace", { raceId })
-
-                    setSelectedRouteId("")
-                    toast.success("Race created successfully.")
-
-                    navigate("/dashboard/races")
-                },
-                onError: () => {
-                    toast.error("Failed to create race.")
-                },
+            if (values.bannerFile) {
+                const uploadResult = await upload(values.bannerFile)
+                bannerUrl = uploadResult[0].url
             }
-        )
+
+            createRaceMutation.mutate(
+                {
+                    name: values.name,
+                    banner_url: bannerUrl,
+                    max_participants: Number(values.maxParticipants || 0),
+                    start_time: values.startTime || new Date().toISOString(),
+                    route_id: values.routeId,
+                },
+                {
+                    onSuccess: (data) => {
+                        const raceId = data.id
+                        socket.emit("createRace", { raceId })
+                        setSelectedRouteId("")
+                        toast.success("Race created successfully.")
+                        navigate("/dashboard/races")
+                    },
+                    onError: () => toast.error("Failed to create race."),
+                }
+            )
+        } catch (error) {
+            if (error instanceof Error) {
+                toast.error("Failed to upload banner image.")
+            }
+        }
+    }
+
+    const handleToggleSheet = () => {
+        setSheetOpen(!sheetOpen)
     }
 
     if (isLoading) {
@@ -98,15 +113,7 @@ export default function RaceCreatePage() {
         <div className="flex gap-6 p-6">
             <div className="flex-1">
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold">Create Race</h2>
-
                     <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-                        <SheetTrigger asChild>
-                            <Button onClick={() => setSheetOpen(true)}>
-                                Select Route
-                            </Button>
-                        </SheetTrigger>
-
                         <SheetContent side="right" className="w-[420px]">
                             <SheetHeader>
                                 <SheetTitle>Select a Route</SheetTitle>
@@ -243,6 +250,7 @@ export default function RaceCreatePage() {
                     }
                     setRouteId={setSelectedRouteId}
                     onSubmit={handleCreate}
+                    onToggleSheet={handleToggleSheet}
                 />
             </div>
         </div>

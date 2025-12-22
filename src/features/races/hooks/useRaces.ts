@@ -19,6 +19,7 @@ export interface Race {
     actual_start_time?: string
     actual_end_time?: string
     max_participants?: number
+    banner_url?: string
     route_id?: string
     created_by?: string
     status: string
