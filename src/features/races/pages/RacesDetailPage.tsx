@@ -1,585 +1,447 @@
-import { useParams, Link } from "react-router-dom"
-import {
-    ArrowLeft,
-    MapPin,
-    Calendar,
-    Users,
-    Clock,
-    User,
-    Flag,
-    Route,
-    CheckCircle2,
-} from "lucide-react"
-import Map, { Source, Layer } from "@vis.gl/react-maplibre"
-import {
-    useAddParticipant,
-    useRace,
-    useRemoveParticipant,
-} from "../hooks/useRaces"
-import { format } from "date-fns"
-import { useState } from "react"
-import { useUser } from "../../auth/hooks/useUser"
-import { toast } from "sonner"
-import { io } from "socket.io-client"
+import React, { useState } from "react"
+import { Calendar, Clock, MapPin, Users, Award, Info } from "lucide-react"
 
-const MAP_STYLE =
-    "https://api.maptiler.com/maps/streets-v4/style.json?key=l60bj9KIXXKDXbsOvzuz"
-
-const formatDate = (dateString?: string) => {
-    if (!dateString) return ""
-    return format(new Date(dateString), "MMM d, yyyy")
+const RACE_DETAIL = {
+    id: "1",
+    name: "City Fun Run",
+    date: "Aug 25, 2025",
+    time: "5:00 AM",
+    location: "Cebu City Sports Complex",
+    status: "upcoming",
+    distance: "5K",
+    participants: 234,
+    maxParticipants: 500,
+    registrationFee: "₱350",
+    imageUrl:
+        "https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?w=800&q=80",
+    routeMapUrl:
+        "https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80",
+    host: {
+        name: "Cebu Sports Council",
+        avatar: "https://ui-avatars.com/api/?name=Cebu+Sports+Council&background=0D8ABC&color=fff",
+        description: "Promoting health and fitness in Cebu since 2010",
+    },
+    description:
+        "Join us for the annual City Fun Run! This family-friendly event promotes fitness and community spirit. The route takes you through the scenic streets of Cebu City, perfect for runners of all levels.",
+    schedule: [
+        { time: "4:30 AM", event: "Registration Opens" },
+        { time: "5:00 AM", event: "Race Start" },
+        { time: "6:30 AM", event: "Awards Ceremony" },
+        { time: "7:00 AM", event: "Event Ends" },
+    ],
 }
 
-const formatTime = (dateString?: string) => {
-    if (!dateString) return ""
-    return format(new Date(dateString), "h:mm a")
-}
-
-const getInitials = (name: string) =>
-    name
-        ?.split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-
-const SOCKET_URL = import.meta.env.VITE_PUBLIC_SOCKET_URL
-
-const RaceDetailPage = () => {
-    const { data: user } = useUser()
-    const { id } = useParams()
-    const {
-        data: race,
-        isLoading,
-        isError,
-        refetch: refetchRace,
-    } = useRace(id!)
-
-    const socket = io(SOCKET_URL)
-
-    const startAddress = race?.routes?.start_address
-    const endAddress = race?.routes?.end_address
-    const [isJoining, setIsJoining] = useState(false)
-    const isHost = race?.created_by_user?.id === user?.id
-    const hasJoined = race?.participants?.some((p) => p.user.id === user?.id)
-
-    const addParticipantMutation = useAddParticipant()
-    const removeParticipantMutation = useRemoveParticipant()
-
-    const handleJoinRace = async () => {
-        if (!race || !user) return
-
-        setIsJoining(true)
-
-        try {
-            await addParticipantMutation.mutateAsync({
-                race_id: race.id,
-                user_id: user.id,
-            })
-
-            refetchRace()
-            socket.emit("joinRace", { raceId: race.id, userId: user.id })
-
-            toast.success("Successfully joined the race!")
-        } catch (err) {
-            if (err instanceof Error) {
-                toast.error(err.message || "Failed to join race.")
-            }
-        } finally {
-            setIsJoining(false)
-        }
-    }
-
-    const handleLeaveRace = async () => {
-        if (!race || !user) return
-
-        try {
-            await removeParticipantMutation.mutateAsync({
-                race_id: race.id,
-                user_id: user.id,
-            })
-
-            refetchRace()
-            socket.emit("leaveRace", { raceId: race.id, userId: user.id })
-
-            toast.success("You left the race")
-        } catch (err) {
-            if (err instanceof Error) toast.error(err.message)
-        }
-    }
-
-    if (isLoading)
-        return (
-            <div className="flex items-center justify-center h-screen bg-gray-50">
-                <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-600 font-medium">
-                        Loading race details...
-                    </p>
-                </div>
-            </div>
-        )
-
-    if (isError || !race)
-        return (
-            <div className="flex items-center justify-center h-screen bg-gray-50">
-                <div className="text-center">
-                    <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 font-medium">Race not found</p>
-                </div>
-            </div>
-        )
-
-    const coords =
-        race.routes?.geojson.features?.[0]?.geometry?.coordinates ?? []
-    let flatCoords: [number, number][] = []
-
-    if (Array.isArray(coords[0])) {
-        flatCoords = coords as [number, number][]
-    }
-
-    const firstCoord: [number, number] = flatCoords[0] ?? [0, 0]
-    const lastCoord: [number, number] = flatCoords[flatCoords.length - 1] ?? [
-        0, 0,
-    ]
-
-    const lineData = {
-        type: "Feature",
-        properties: {},
-        geometry: {
-            type: "LineString",
-            coordinates: flatCoords,
-        },
-    } as const
-
-    const participantCount = race.participants?.length ?? 0
-    const spotsLeft = race.max_participants
-        ? race.max_participants - participantCount
-        : null
+export default function RaceDetailPage() {
+    const [activeTab, setActiveTab] = useState("details")
+    const participationPercentage =
+        (RACE_DETAIL.participants / RACE_DETAIL.maxParticipants) * 100
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="bg-white border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="py-6">
-                        <Link
-                            to="/dashboard/races"
-                            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
-                        >
-                            <ArrowLeft size={18} />
-                            Back to Races
-                        </Link>
+        <div className="min-h-screen bg-white text-gray-900">
+            <style>
+                {`
+          @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Antonio:wght@700&family=Work+Sans:wght@400;500;600;700&display=swap');
+
+          :root {
+            --electric-cyan: #00f0ff;
+            --hot-orange: #ff4500;
+            --lime-green: #39ff14;
+            --deep-purple: #6B00FF;
+          }
+
+          .font-display {
+            font-family: 'Antonio', sans-serif;
+            letter-spacing: -0.02em;
+          }
+
+          .font-heading {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 0.02em;
+          }
+
+          .font-body {
+            font-family: 'Work Sans', sans-serif;
+          }
+
+          .hero-gradient {
+            background: linear-gradient(135deg, 
+              rgba(0, 240, 255, 0.15) 0%, 
+              rgba(107, 0, 255, 0.15) 50%,
+              rgba(255, 69, 0, 0.15) 100%
+            );
+          }
+
+          .glow-cyan {
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
+          }
+
+          .glow-orange {
+            box-shadow: 0 0 30px rgba(255, 69, 0, 0.3);
+          }
+
+          .slide-in {
+            animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+
+          .fade-in {
+            animation: fadeIn 0.6s ease-out;
+          }
+
+          .fade-in-delay-1 {
+            animation: fadeIn 0.6s ease-out 0.2s both;
+          }
+
+          .fade-in-delay-2 {
+            animation: fadeIn 0.6s ease-out 0.4s both;
+          }
+
+          .fade-in-delay-3 {
+            animation: fadeIn 0.6s ease-out 0.6s both;
+          }
+
+          @keyframes slideIn {
+            from {
+              transform: translateY(30px);
+              opacity: 0;
+            }
+            to {
+              transform: translateY(0);
+              opacity: 1;
+            }
+          }
+
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          .status-badge {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          }
+
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+          }
+
+          .diagonal-clip {
+            clip-path: polygon(0 0, 100% 0, 100% 95%, 0 100%);
+          }
+
+          .info-card:hover {
+            transform: translateY(-4px);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+
+          .info-card {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+
+          .tab-button {
+            position: relative;
+            transition: color 0.3s ease;
+          }
+
+          .tab-button::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--electric-cyan), var(--lime-green));
+            transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+
+          .tab-button.active::after { width: 100%; }
+
+          .progress-bar {
+            background: linear-gradient(90deg, var(--electric-cyan), var(--lime-green));
+            animation: shimmer 2s linear infinite;
+            background-size: 200% 100%;
+          }
+
+          @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+
+          .grain-overlay { position: relative; }
+
+          .grain-overlay::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            opacity: 0.1;
+            pointer-events: none;
+          }
+        `}
+            </style>
+
+            {/* Hero Section */}
+            <div className="relative overflow-hidden diagonal-clip grain-overlay">
+                <div className="absolute inset-0 hero-gradient"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white"></div>
+
+                <div className="relative">
+                    <img
+                        src={RACE_DETAIL.imageUrl}
+                        alt={RACE_DETAIL.name}
+                        className="w-full h-[60vh] object-cover opacity-40 slide-in"
+                    />
+
+                    <div className="absolute inset-0 flex items-end">
+                        <div className="w-full max-w-7xl mx-auto px-6 pb-16">
+                            <div className="slide-in">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <span className="status-badge px-6 py-2 bg-lime-green/20 border-2 border-lime-green text-lime-green font-heading text-lg uppercase">
+                                        {RACE_DETAIL.status}
+                                    </span>
+                                    <span className="px-6 py-2 bg-electric-cyan/20 border border-electric-cyan text-electric-cyan font-heading text-lg">
+                                        {RACE_DETAIL.distance}
+                                    </span>
+                                </div>
+
+                                <h1 className="font-display text-8xl md:text-9xl leading-none mb-4 bg-gradient-to-r from-gray-900 via-electric-cyan to-lime-green bg-clip-text text-transparent">
+                                    {RACE_DETAIL.name}
+                                </h1>
+
+                                <div className="flex flex-wrap gap-6 text-gray-600 font-body text-lg">
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="w-5 h-5 text-electric-cyan" />
+                                        <span>{RACE_DETAIL.date}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-5 h-5 text-electric-cyan" />
+                                        <span>{RACE_DETAIL.time}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <MapPin className="w-5 h-5 text-hot-orange" />
+                                        <span>{RACE_DETAIL.location}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="border-b border-gray-200 bg-linear-to-br from-blue-50 to-indigo-50 p-8">
-                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-                            <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <span
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide ${
-                                            race.status === "upcoming"
-                                                ? "bg-blue-600 text-white"
-                                                : race.status === "ongoing"
-                                                ? "bg-green-600 text-white"
-                                                : "bg-gray-600 text-white"
-                                        }`}
-                                    >
-                                        {race.status}
-                                    </span>
-                                    {isHost && (
-                                        <span className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide bg-purple-600 text-white flex items-center gap-1.5">
-                                            <User size={14} />
-                                            Host
-                                        </span>
-                                    )}
-                                    {hasJoined && !isHost && (
-                                        <span className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide bg-emerald-600 text-white flex items-center gap-1.5">
-                                            <CheckCircle2 size={14} />
-                                            Joined
-                                        </span>
-                                    )}
-                                </div>
-                                <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
-                                    {race.name}
-                                </h1>
-                                {race.description && (
-                                    <p className="text-base text-gray-600 mb-6 max-w-2xl">
-                                        {race.description}
-                                    </p>
-                                )}
-                                <div className="flex flex-wrap gap-5">
-                                    <div className="flex items-center gap-2.5 text-gray-700">
-                                        <div className="w-9 h-9 rounded-lg bg-white/80 flex items-center justify-center">
-                                            <Calendar className="w-4 h-4 text-blue-600" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 font-medium">
-                                                Date
-                                            </p>
-                                            <p className="text-sm font-semibold">
-                                                {formatDate(race.start_time)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2.5 text-gray-700">
-                                        <div className="w-9 h-9 rounded-lg bg-white/80 flex items-center justify-center">
-                                            <Clock className="w-4 h-4 text-blue-600" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 font-medium">
-                                                Start Time
-                                            </p>
-                                            <p className="text-sm font-semibold">
-                                                {formatTime(race.start_time)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    {race.created_by_user && (
-                                        <div className="flex items-center gap-2.5 text-gray-700">
-                                            <div className="w-9 h-9 rounded-lg bg-white/80 flex items-center justify-center">
-                                                <User className="w-4 h-4 text-blue-600" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-gray-500 font-medium">
-                                                    Host
-                                                </p>
-                                                <p className="text-sm font-semibold">
-                                                    {
-                                                        race.created_by_user
-                                                            .full_name
-                                                    }
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col gap-3 lg:items-end">
-                                <Link
-                                    to={`/dashboard/races/${race.id}/live`}
-                                    className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-all text-sm text-center"
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-6 py-16">
+                <div className="grid lg:grid-cols-3 gap-12">
+                    {/* Left Column - Tabs */}
+                    <div className="lg:col-span-2 space-y-12">
+                        <div className="border-b border-gray-300 fade-in">
+                            <div className="flex gap-8 font-heading text-xl">
+                                <button
+                                    onClick={() => setActiveTab("details")}
+                                    className={`tab-button pb-4 ${
+                                        activeTab === "details"
+                                            ? "active text-gray-900"
+                                            : "text-gray-400"
+                                    }`}
                                 >
-                                    Go to Live Race
-                                </Link>
-
-                                {!isHost && (
-                                    <>
-                                        {hasJoined ? (
-                                            <button
-                                                onClick={handleLeaveRace}
-                                                disabled={
-                                                    removeParticipantMutation.isPending
-                                                }
-                                                className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                                            >
-                                                {removeParticipantMutation.isPending
-                                                    ? "Leaving..."
-                                                    : "Leave Race"}
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={handleJoinRace}
-                                                disabled={
-                                                    isJoining ||
-                                                    race.status !== "upcoming"
-                                                }
-                                                className={`px-6 py-3 text-white font-semibold rounded-lg transition-all text-sm
-                                                ${
-                                                    race.status === "upcoming"
-                                                        ? "bg-blue-600 hover:bg-blue-700"
-                                                        : "bg-gray-400 cursor-not-allowed"
-                                                }`}
-                                            >
-                                                {isJoining
-                                                    ? "Joining..."
-                                                    : "Join Race"}
-                                            </button>
-                                        )}
-                                    </>
-                                )}
-
-                                {race.max_participants && (
-                                    <div className="text-center lg:text-right">
-                                        <p className="text-2xl font-bold text-gray-900">
-                                            {participantCount}/
-                                            {race.max_participants}
-                                        </p>
-                                        <p className="text-xs text-gray-600 font-medium">
-                                            {spotsLeft}{" "}
-                                            {spotsLeft === 1 ? "spot" : "spots"}{" "}
-                                            left
-                                        </p>
-                                    </div>
-                                )}
+                                    DETAILS
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab("schedule")}
+                                    className={`tab-button pb-4 ${
+                                        activeTab === "schedule"
+                                            ? "active text-gray-900"
+                                            : "text-gray-400"
+                                    }`}
+                                >
+                                    SCHEDULE
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab("route")}
+                                    className={`tab-button pb-4 ${
+                                        activeTab === "route"
+                                            ? "active text-gray-900"
+                                            : "text-gray-400"
+                                    }`}
+                                >
+                                    ROUTE
+                                </button>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="border-b border-gray-200">
-                        <div className="relative h-[450px]">
-                            {flatCoords.length > 0 ? (
-                                <Map
-                                    style={{
-                                        width: "100%",
-                                        height: "100%",
-                                    }}
-                                    mapStyle={MAP_STYLE}
-                                    attributionControl={false}
-                                    initialViewState={{
-                                        latitude: firstCoord[1],
-                                        longitude: firstCoord[0],
-                                        zoom: 14,
-                                    }}
-                                >
-                                    <Source
-                                        id="race-route"
-                                        type="geojson"
-                                        data={lineData}
-                                    >
-                                        <Layer
-                                            id="race-line"
-                                            type="line"
-                                            paint={{
-                                                "line-color": "#2563EB",
-                                                "line-width": 5,
-                                                "line-opacity": 0.8,
-                                            }}
+                        {/* Tab Content */}
+                        {activeTab === "details" && (
+                            <div className="fade-in">
+                                <h2 className="font-display text-4xl mb-6 text-gray-900">
+                                    About the Race
+                                </h2>
+                                <p className="font-body text-lg text-gray-700 leading-relaxed">
+                                    {RACE_DETAIL.description}
+                                </p>
+
+                                <div className="mt-8 p-6 bg-gray-50 border border-gray-300 rounded-lg">
+                                    <div className="flex items-start gap-4">
+                                        <img
+                                            src={RACE_DETAIL.host.avatar}
+                                            alt={RACE_DETAIL.host.name}
+                                            className="w-16 h-16 rounded-full"
                                         />
-                                    </Source>
+                                        <div>
+                                            <h3 className="font-heading text-2xl text-gray-900 mb-1">
+                                                {RACE_DETAIL.host.name}
+                                            </h3>
+                                            <p className="font-body text-gray-600">
+                                                {RACE_DETAIL.host.description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
-                                    <Source
-                                        id="start-point"
-                                        type="geojson"
-                                        data={{
-                                            type: "Feature",
-                                            geometry: {
-                                                type: "Point",
-                                                coordinates: firstCoord,
-                                            },
-                                            properties: {},
+                        {activeTab === "schedule" && (
+                            <div className="fade-in space-y-4">
+                                <h2 className="font-display text-4xl mb-6 text-gray-900">
+                                    Event Schedule
+                                </h2>
+                                {RACE_DETAIL.schedule.map((item, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex items-center gap-6 p-5 bg-gray-50 border border-gray-200 rounded-lg hover:border-electric-cyan/50 transition-colors"
+                                        style={{
+                                            animationDelay: `${index * 0.1}s`,
                                         }}
                                     >
-                                        <Layer
-                                            id="start-circle"
-                                            type="circle"
-                                            paint={{
-                                                "circle-radius": 10,
-                                                "circle-color": "#10B981",
-                                                "circle-stroke-width": 3,
-                                                "circle-stroke-color":
-                                                    "#ffffff",
-                                            }}
-                                        />
-                                    </Source>
+                                        <div className="flex-shrink-0 w-24">
+                                            <span className="font-heading text-2xl text-electric-cyan">
+                                                {item.time}
+                                            </span>
+                                        </div>
+                                        <div className="flex-grow">
+                                            <span className="font-body text-lg text-gray-700">
+                                                {item.event}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
-                                    <Source
-                                        id="end-point"
-                                        type="geojson"
-                                        data={{
-                                            type: "Feature",
-                                            geometry: {
-                                                type: "Point",
-                                                coordinates: lastCoord,
-                                            },
-                                            properties: {},
-                                        }}
-                                    >
-                                        <Layer
-                                            id="end-circle"
-                                            type="circle"
-                                            paint={{
-                                                "circle-radius": 10,
-                                                "circle-color": "#EF4444",
-                                                "circle-stroke-width": 3,
-                                                "circle-stroke-color":
-                                                    "#ffffff",
-                                            }}
-                                        />
-                                    </Source>
-                                </Map>
-                            ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
-                                    <MapPin className="w-16 h-16 text-gray-300 mb-3" />
-                                    <p className="text-gray-500 font-medium">
-                                        No route available
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                        {flatCoords.length > 0 && (
-                            <div className="px-8 py-4 bg-gray-50 flex items-center justify-center gap-8">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                                    <span className="text-sm font-medium text-gray-700">
-                                        Start Point
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                    <span className="text-sm font-medium text-gray-700">
-                                        Finish Point
-                                    </span>
+                        {activeTab === "route" && (
+                            <div className="fade-in">
+                                <h2 className="font-display text-4xl mb-6 text-gray-900">
+                                    Race Route
+                                </h2>
+                                <div className="rounded-lg overflow-hidden border-2 border-electric-cyan/30">
+                                    <img
+                                        src={RACE_DETAIL.routeMapUrl}
+                                        alt="Race Route Map"
+                                        className="w-full h-[500px] object-cover"
+                                    />
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <div className="p-8">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
-                                    <Route className="w-5 h-5 text-blue-600" />
-                                    Route Information
-                                </h3>
-                                <div className="space-y-4">
-                                    {race.routes?.name && (
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
-                                                <Flag className="w-5 h-5 text-purple-600" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs text-gray-500 font-medium mb-1">
-                                                    Route Name
-                                                </p>
-                                                <p className="text-sm font-semibold text-gray-900">
-                                                    {race.routes.name}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {race.routes?.distance !== undefined && (
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">
-                                                <Route className="w-5 h-5 text-teal-600" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs text-gray-500 font-medium mb-1">
-                                                    Distance
-                                                </p>
-                                                <p className="text-sm font-semibold text-gray-900">
-                                                    {Math.round(
-                                                        race.routes.distance *
-                                                            100
-                                                    ) / 100}{" "}
-                                                    km
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {startAddress && (
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
-                                                <MapPin className="w-5 h-5 text-green-600" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs text-gray-500 font-medium mb-1">
-                                                    Start Location
-                                                </p>
-                                                <p className="text-sm font-semibold text-gray-900 wrap-break-word">
-                                                    {startAddress}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {endAddress && (
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                                                <MapPin className="w-5 h-5 text-red-600" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs text-gray-500 font-medium mb-1">
-                                                    Finish Location
-                                                </p>
-                                                <p className="text-sm font-semibold text-gray-900 wrap-break-word">
-                                                    {endAddress}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {race.end_time && (
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center shrink-0">
-                                                <Clock className="w-5 h-5 text-orange-600" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs text-gray-500 font-medium mb-1">
-                                                    End Time
-                                                </p>
-                                                <p className="text-sm font-semibold text-gray-900">
-                                                    {formatTime(race.end_time)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
+                    {/* Right Column */}
+                    <div className="space-y-6">
+                        <div className="info-card fade-in-delay-1 p-8 bg-gradient-to-br from-electric-cyan/10 to-lime-green/10 border-2 border-electric-cyan/50 rounded-lg glow-cyan">
+                            <div className="text-center mb-6">
+                                <div className="font-display text-5xl text-gray-900 mb-2">
+                                    {RACE_DETAIL.registrationFee}
+                                </div>
+                                <div className="font-body text-sm text-gray-500 uppercase tracking-wider">
+                                    Registration Fee
                                 </div>
                             </div>
 
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
-                                    <Users className="w-5 h-5 text-blue-600" />
-                                    Participants ({participantCount})
-                                </h3>
+                            <button className="w-full py-4 bg-gradient-to-r from-electric-cyan to-lime-green text-gray-900 font-heading text-2xl rounded-lg hover:shadow-2xl hover:shadow-electric-cyan/50 transition-shadow">
+                                REGISTER NOW
+                            </button>
+                        </div>
 
-                                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                                    {race.participants &&
-                                    race.participants.length > 0 ? (
-                                        race.participants.map((p) => (
-                                            <div
-                                                key={p.id}
-                                                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100"
-                                            >
-                                                <div>
-                                                    <span className="text-sm text-gray-500">
-                                                        # {p.bib_number}
-                                                    </span>
-                                                </div>
-                                                <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
-                                                    {p.user.avatar_url ? (
-                                                        <img
-                                                            src={
-                                                                p.user
-                                                                    .avatar_url
-                                                            }
-                                                            alt={
-                                                                p.user.full_name
-                                                            }
-                                                            className="w-full h-full rounded-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        getInitials(
-                                                            p.user.full_name ||
-                                                                ""
-                                                        )
-                                                    )}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-semibold text-gray-900 truncate">
-                                                        {p.user.full_name}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="text-center py-12 border border-gray-200 rounded-lg bg-gray-50">
-                                            <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                                            <p className="text-gray-600 text-sm font-medium">
-                                                No participants yet
-                                            </p>
-                                            <p className="text-gray-400 text-xs mt-1">
-                                                Be the first to join this race!
-                                            </p>
-                                        </div>
-                                    )}
+                        {/* Quick Stats */}
+                        <div className="info-card fade-in-delay-2 p-6 bg-gray-50 border border-gray-200 rounded-lg space-y-6">
+                            <h3 className="font-heading text-2xl text-gray-900">
+                                Quick Info
+                            </h3>
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Users className="w-5 h-5 text-hot-orange" />
+                                        <span className="font-body text-gray-700">
+                                            Participants
+                                        </span>
+                                    </div>
+                                    <span className="font-heading text-xl text-gray-900">
+                                        {RACE_DETAIL.participants}/
+                                        {RACE_DETAIL.maxParticipants}
+                                    </span>
                                 </div>
+
+                                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                    <div
+                                        className="progress-bar h-full rounded-full"
+                                        style={{
+                                            width: `${participationPercentage}%`,
+                                        }}
+                                    ></div>
+                                </div>
+                                <p className="text-sm text-gray-500 font-body">
+                                    {Math.round(participationPercentage)}% spots
+                                    filled
+                                </p>
+                            </div>
+
+                            <div className="pt-4 border-t border-gray-200 space-y-3">
+                                <div className="flex items-start gap-3">
+                                    <Award className="w-5 h-5 text-lime-green mt-1 flex-shrink-0" />
+                                    <div>
+                                        <div className="font-body font-semibold text-gray-900 mb-1">
+                                            Awards
+                                        </div>
+                                        <div className="font-body text-sm text-gray-600">
+                                            Medals for all finishers, trophies
+                                            for top 3 in each category
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-3">
+                                    <Info className="w-5 h-5 text-electric-cyan mt-1 flex-shrink-0" />
+                                    <div>
+                                        <div className="font-body font-semibold text-gray-900 mb-1">
+                                            What to Bring
+                                        </div>
+                                        <div className="font-body text-sm text-gray-600">
+                                            Valid ID, comfortable running shoes,
+                                            water bottle
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Share Section */}
+                        <div className="info-card fade-in-delay-3 p-6 bg-gray-50 border border-gray-200 rounded-lg">
+                            <h3 className="font-heading text-xl text-gray-900 mb-4">
+                                Share This Race
+                            </h3>
+                            <div className="flex gap-3">
+                                <button className="flex-1 py-3 bg-white hover:bg-gray-100 font-body text-sm rounded border border-gray-300 transition-colors">
+                                    Facebook
+                                </button>
+                                <button className="flex-1 py-3 bg-white hover:bg-gray-100 font-body text-sm rounded border border-gray-300 transition-colors">
+                                    Twitter
+                                </button>
+                                <button className="flex-1 py-3 bg-white hover:bg-gray-100 font-body text-sm rounded border border-gray-300 transition-colors">
+                                    Copy Link
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -588,5 +450,3 @@ const RaceDetailPage = () => {
         </div>
     )
 }
-
-export default RaceDetailPage
