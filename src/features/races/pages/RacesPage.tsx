@@ -1,148 +1,28 @@
 import { useState } from "react"
 import {
     Users,
-    Clock,
-    Plus,
-    MapPin,
     Calendar,
-    User,
+    MapPin,
     TrendingUp,
-    Award,
+    ChevronRight,
+    Search,
+    Pin,
 } from "lucide-react"
 import { useRaces, type Race } from "../hooks/useRaces"
 import { Link } from "react-router-dom"
 
 export default function RacesPage() {
-    const [search, setSearch] = useState("")
-    const [tabStatus, setTabStatus] = useState<
-        "upcoming" | "ongoing" | "finished"
-    >("upcoming")
+    const [searchTerm, setSearchTerm] = useState("")
+    const [statusFilter, setStatusFilter] = useState<
+        "upcoming" | "ongoing" | "finished" | "all"
+    >("all")
 
     const { data: races, isLoading } = useRaces({
-        status: tabStatus,
-        name: search || undefined,
+        status: statusFilter === "all" ? undefined : statusFilter,
+        name: searchTerm || undefined,
     })
 
-    return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="bg-white border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                                Race Events
-                            </h1>
-                            <p className="text-gray-600">
-                                Discover and join exciting racing events
-                            </p>
-                        </div>
-                        <Link to="/dashboard/races/create">
-                            <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 font-semibold">
-                                <Plus className="w-5 h-5" />
-                                Create Race
-                            </button>
-                        </Link>
-                    </div>
-
-                    <div className="mt-6">
-                        <input
-                            type="text"
-                            placeholder="Search races by name..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full px-6 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
-                        />
-                    </div>
-
-                    <div className="flex gap-3 mt-6">
-                        {["upcoming", "ongoing", "finished"].map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() =>
-                                    setTabStatus(
-                                        tab as
-                                            | "upcoming"
-                                            | "ongoing"
-                                            | "finished"
-                                    )
-                                }
-                                className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                                    tabStatus === tab
-                                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-                                        : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
-                                }`}
-                            >
-                                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {isLoading && (
-                    <div className="flex flex-col items-center justify-center py-20">
-                        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <p className="text-gray-600 font-medium">
-                            Loading races...
-                        </p>
-                    </div>
-                )}
-
-                {!isLoading && races && races.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {races.map((race) => (
-                            <RaceCard key={race.id} race={race} />
-                        ))}
-                    </div>
-                )}
-
-                {!isLoading && (!races || races.length === 0) && (
-                    <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-300">
-                        <Award className="w-20 h-20 text-gray-300 mb-4" />
-                        <p className="text-gray-600 font-medium text-lg mb-2">
-                            No races found
-                        </p>
-                        <p className="text-gray-500 text-sm">
-                            Try adjusting your search or create a new race
-                        </p>
-                    </div>
-                )}
-            </div>
-        </div>
-    )
-}
-
-function RaceCard({ race }: { race: Race }) {
-    const imageSrc = race.routes?.map_url
-    const participantCount = race.participants?.length ?? 0
-    const maxParticipants = race.max_participants ?? 1
-    const participationRate = (participantCount / maxParticipants) * 100
-    const isFull = participationRate >= 100
-
-    const getStatus = () => {
-        switch (race.status) {
-            case "ongoing":
-                return {
-                    text: "Live Now",
-                    icon: "●",
-                    className: "bg-green-500 text-white",
-                }
-            case "finished":
-                return {
-                    text: "Completed",
-                    icon: "✓",
-                    className: "bg-gray-500 text-white",
-                }
-            default:
-                return {
-                    text: "Upcoming",
-                    icon: "◐",
-                    className: "bg-blue-500 text-white",
-                }
-        }
-    }
-    const status = getStatus()
+    const filteredRaces = races || []
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString)
@@ -156,164 +36,261 @@ function RaceCard({ race }: { race: Race }) {
     const formatTime = (dateString: string) => {
         const date = new Date(dateString)
         return date.toLocaleTimeString("en-US", {
-            hour: "numeric",
+            hour: "2-digit",
             minute: "2-digit",
-            hour12: true,
         })
     }
 
-    return (
-        <Link to={`/dashboard/races/${race.id}`}>
-            <div className="group h-full bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-xl hover:border-blue-300 transition-all duration-300 cursor-pointer">
-                <div className="relative h-52 bg-linear-to-br from-blue-500 to-blue-600 overflow-hidden">
-                    {imageSrc ? (
-                        <img
-                            src={imageSrc}
-                            alt={race.routes?.name || race.name}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-blue-500 to-purple-600">
-                            <MapPin className="w-20 h-20 text-white/30" />
-                        </div>
-                    )}
+    const getStatusConfig = (status: string) => {
+        switch (status) {
+            case "upcoming":
+                return { color: "text-blue-700 bg-blue-50", label: "Upcoming" }
+            case "ongoing":
+                return { color: "text-green-700 bg-green-50", label: "Ongoing" }
+            case "finished":
+                return { color: "text-gray-700 bg-gray-100", label: "Finished" }
+            default:
+                return { color: "text-gray-700 bg-gray-100", label: "Unknown" }
+        }
+    }
 
-                    <div className="absolute top-4 right-4">
-                        <span
-                            className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-lg ${status.className} flex items-center gap-1`}
-                        >
-                            <span>{status.icon}</span>
-                            {status.text}
-                        </span>
+    const participantPercentage = (race: Race) => {
+        const max = race.max_participants || 1
+        const count = race.participants?.length || 0
+        return Math.round((count / max) * 100)
+    }
+
+    return (
+        <div className="min-h-screen bg-white">
+            {/* Header */}
+            <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-6 py-4">
+                    <div className="flex items-center justify-between mb-4">
+                        <h1 className="text-2xl text-gray-800 font-normal">
+                            Race Events
+                        </h1>
+                        <Link to="/dashboard/races/create">
+                            <button className="px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                                Create Race
+                            </button>
+                        </Link>
                     </div>
 
-                    {isFull && (
-                        <div className="absolute top-4 left-4">
-                            <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-red-500 text-white shadow-lg">
-                                FULL
-                            </span>
+                    {/* Search and Filters */}
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="flex-1 relative">
+                            <SearchTermIcon />
+                            <input
+                                type="text"
+                                placeholder="Search races"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-full pl-12 pr-4 py-3 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            />
                         </div>
-                    )}
 
-                    {race.routes?.name && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 via-black/40 to-transparent p-4">
-                            <div className="flex items-center gap-2 text-white">
-                                <MapPin className="w-4 h-4" />
-                                <span className="font-semibold text-sm">
-                                    {race.routes.name}
-                                </span>
-                                {race.routes?.distance && (
-                                    <span className="ml-auto px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold">
-                                        {race.routes.distance.toFixed(1)} km
-                                    </span>
-                                )}
-                            </div>
+                        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
+                            {["all", "upcoming", "ongoing", "finished"].map(
+                                (filter) => (
+                                    <button
+                                        key={filter}
+                                        onClick={() =>
+                                            setStatusFilter(
+                                                filter as
+                                                    | "upcoming"
+                                                    | "ongoing"
+                                                    | "finished"
+                                                    | "all"
+                                            )
+                                        }
+                                        className={`px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                                            statusFilter === filter
+                                                ? "bg-blue-600 text-white shadow-sm"
+                                                : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                                        }`}
+                                    >
+                                        {filter.charAt(0).toUpperCase() +
+                                            filter.slice(1)}
+                                    </button>
+                                )
+                            )}
                         </div>
-                    )}
+                    </div>
+                </div>
+            </header>
+
+            <main className="max-w-7xl mx-auto px-6 py-8">
+                {isLoading && (
+                    <div className="flex flex-col items-center justify-center py-20">
+                        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p className="text-gray-600 font-medium">
+                            Loading races...
+                        </p>
+                    </div>
+                )}
+
+                {!isLoading && filteredRaces.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {filteredRaces.map((race) => (
+                            <RaceCard
+                                key={race.id}
+                                race={race}
+                                formatDate={formatDate}
+                                formatTime={formatTime}
+                                getStatusConfig={getStatusConfig}
+                                participantPercentage={participantPercentage}
+                            />
+                        ))}
+                    </div>
+                )}
+
+                {!isLoading && filteredRaces.length === 0 && (
+                    <div className="text-center py-16">
+                        <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                            <TrendingUp size={40} className="text-gray-400" />
+                        </div>
+                        <h3 className="text-xl font-medium text-gray-900 mb-2">
+                            No races found
+                        </h3>
+                        <p className="text-gray-600 mb-6">
+                            Try adjusting your search or filter criteria
+                        </p>
+                        <button
+                            onClick={() => {
+                                setSearchTerm("")
+                                setStatusFilter("all")
+                            }}
+                            className="px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 transition-colors"
+                        >
+                            Clear filters
+                        </button>
+                    </div>
+                )}
+            </main>
+        </div>
+    )
+}
+
+function SearchTermIcon() {
+    return (
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+    )
+}
+
+function RaceCard({
+    race,
+    formatDate,
+    formatTime,
+    getStatusConfig,
+    participantPercentage,
+}: {
+    race: Race
+    formatDate: (s: string) => string
+    formatTime: (s: string) => string
+    getStatusConfig: (s: string) => { color: string; label: string }
+    participantPercentage: (r: Race) => number
+}) {
+    const statusConfig = getStatusConfig(race.status)
+    const spotsLeft =
+        (race.max_participants || 0) - (race.participants?.length || 0)
+    const percentage = participantPercentage(race)
+
+    return (
+        <Link to={`/dashboard/races/${race.id}`}>
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all cursor-pointer group">
+                {/* Image */}
+                <div className="relative h-48 overflow-hidden bg-gray-100">
+                    <img
+                        src={race.banner_url || race.routes?.map_url}
+                        alt={race.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-3 left-3">
+                        <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}
+                        >
+                            {statusConfig.label}
+                        </span>
+                    </div>
                 </div>
 
+                {/* Content */}
                 <div className="p-5 space-y-4">
-                    <h2 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                    <h3 className="text-lg font-medium text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
                         {race.name}
-                    </h2>
+                    </h3>
 
-                    {race.description && (
-                        <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
-                            {race.description}
-                        </p>
-                    )}
-
-                    <div className="flex items-center gap-3 text-sm">
-                        <div className="flex items-center gap-2 text-gray-700 bg-gray-50 px-3 py-1.5 rounded-lg">
-                            <Calendar className="w-4 h-4 text-blue-600" />
-                            <span className="font-medium">
-                                {formatDate(race.start_time)}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-700 bg-gray-50 px-3 py-1.5 rounded-lg">
-                            <Clock className="w-4 h-4 text-blue-600" />
-                            <span className="font-medium">
+                    <div className="space-y-3 mb-4">
+                        <div className="flex items-center text-sm text-gray-700">
+                            <Calendar
+                                className="text-gray-400 mr-2"
+                                size={16}
+                            />
+                            <span>
+                                {formatDate(race.start_time)} at{" "}
                                 {formatTime(race.start_time)}
                             </span>
                         </div>
-                    </div>
-
-                    {race.created_by_user && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <User className="w-4 h-4 text-gray-400" />
-                            <span>Host:</span>
-                            <span className="font-semibold text-gray-900">
-                                {race.created_by_user.full_name}
-                            </span>
-                        </div>
-                    )}
-
-                    <div className="space-y-2 mt-2">
                         {race.routes?.start_address && (
-                            <div
-                                className="flex items-center gap-2 text-sm text-gray-700 cursor-default"
-                                title={race.routes.start_address}
-                            >
-                                <MapPin className="w-4 h-4 text-green-500" />
-                                <span className="truncate">
-                                    {race.routes.start_address}
-                                </span>
+                            <div className="flex items-center text-sm text-gray-700">
+                                <Pin className="text-gray-400 mr-2" size={16} />
+                                <span>{race.routes?.start_address}</span>
                             </div>
                         )}
-                        {race.routes?.end_address && (
-                            <div
-                                className="flex items-center gap-2 text-sm text-gray-700 cursor-default"
-                                title={race.routes.end_address}
-                            >
-                                <MapPin className="w-4 h-4 text-red-500" />
-                                <span className="truncate">
-                                    {race.routes.end_address}
-                                </span>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2 text-gray-700">
-                                <Users className="w-4 h-4 text-blue-600" />
-                                <span className="font-semibold">
-                                    {participantCount}/{maxParticipants}
-                                </span>
-                                <span className="text-gray-500">
-                                    participants
-                                </span>
-                            </div>
-                            <span
-                                className={`text-xs font-bold ${
-                                    isFull ? "text-red-600" : "text-blue-600"
-                                }`}
-                            >
-                                {participationRate.toFixed(0)}%
-                            </span>
+                        <div className="flex items-center text-sm text-gray-700">
+                            <MapPin className="text-gray-400 mr-2" size={16} />
+                            <span>{race.routes?.distance?.toFixed(2)} km</span>
                         </div>
-
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                                className={`h-full rounded-full transition-all duration-500 ${
-                                    isFull
-                                        ? "bg-linear-to-r from-red-500 to-red-600"
-                                        : "bg-linear-to-r from-blue-500 to-blue-600"
-                                }`}
-                                style={{
-                                    width: `${Math.min(
-                                        participationRate,
-                                        100
-                                    )}%`,
-                                }}
-                            />
+                        <div className="flex items-center text-sm text-gray-700">
+                            <Users className="text-gray-400 mr-2" size={16} />
+                            <div className="flex-1">
+                                <span>
+                                    {race.participants?.length || 0}/
+                                    {race.max_participants} registered
+                                </span>
+                                <div className="mt-1.5 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                                        style={{ width: `${percentage}%` }}
+                                    ></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <button className="w-full py-3 bg-gray-50 group-hover:bg-blue-600 text-gray-700 group-hover:text-white rounded-xl transition-all font-semibold text-sm flex items-center justify-center gap-2">
-                        View Details
-                        <TrendingUp className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                        <div>
+                            <div className="text-2xl font-medium text-gray-900">
+                                {race?.price
+                                    ? `₱${race.price?.toLocaleString()}`
+                                    : "Free"}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                                Entry fee
+                            </div>
+                        </div>
+
+                        <button className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-full text-sm font-medium transition-colors flex items-center gap-1">
+                            View details
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
+                        Organized by{" "}
+                        <span className="text-gray-700 font-medium">
+                            {race.created_by_user.full_name}
+                        </span>
+                    </div>
+
+                    {spotsLeft <= 50 &&
+                        spotsLeft > 0 &&
+                        race.status === "upcoming" && (
+                            <div className="mt-3 flex items-center gap-2 text-xs text-orange-700 bg-orange-50 px-3 py-2 rounded-lg">
+                                <TrendingUp size={14} />
+                                <span>Only {spotsLeft} spots remaining</span>
+                            </div>
+                        )}
                 </div>
             </div>
         </Link>

@@ -34,7 +34,7 @@ import { RichTextEditor } from "./RichTextEditor"
 const raceFormSchema = z.object({
     name: z.string().min(1, "Race name is required"),
     description: z.string().optional(),
-    price: z.number().min(0, "Amount must be a positive number"),
+    price: z.number().nonnegative().optional(),
     bannerFile: z
         .any()
         .refine((file) => !file || file instanceof File, "Invalid file")
@@ -167,10 +167,18 @@ export function RaceForm({
                                                 <Input
                                                     type="number"
                                                     min={0}
-                                                    step="0.01"
+                                                    step="1.00"
                                                     placeholder="0.00"
                                                     className="h-12 pl-10 text-base border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md"
                                                     {...field}
+                                                    onChange={(e) =>
+                                                        field.onChange(
+                                                            parseInt(
+                                                                e.target.value,
+                                                                0
+                                                            )
+                                                        )
+                                                    }
                                                 />
                                             </div>
                                         </FormControl>

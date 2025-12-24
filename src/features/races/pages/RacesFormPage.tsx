@@ -80,6 +80,8 @@ export default function RaceCreatePage() {
             createRaceMutation.mutate(
                 {
                     name: values.name,
+                    price: values.price,
+                    description: values.description,
                     banner_url: bannerUrl,
                     max_participants: Number(values.maxParticipants || 0),
                     start_time: values.startTime || new Date().toISOString(),
