@@ -41,6 +41,16 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
+.rich-text-editor h1 {
+    @apply text-2xl font-bold mt-4 mb-2;
+}
+.rich-text-editor h2 {
+    @apply text-xl font-semibold mt-3 mb-2;
+}
+.rich-text-editor h3 {
+    @apply text-lg font-medium mt-2 mb-1;
+}
+
 :root {
     --radius: 0.625rem;
     --background: oklch(1 0 0);

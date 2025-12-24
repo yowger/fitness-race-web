@@ -11,7 +11,7 @@ import {
     FormMessage,
 } from "../../../components/ui/form"
 import { Input } from "../../../components/ui/input"
-import { Textarea } from "../../../components/ui/textarea"
+// import { Textarea } from "../../../components/ui/textarea"
 import {
     MapPin,
     Upload,
@@ -29,10 +29,12 @@ import {
     Milestone,
 } from "lucide-react"
 import { useState } from "react"
+import { RichTextEditor } from "./RichTextEditor"
 
 const raceFormSchema = z.object({
     name: z.string().min(1, "Race name is required"),
     description: z.string().optional(),
+    price: z.number().min(0, "Amount must be a positive number"),
     bannerFile: z
         .any()
         .refine((file) => !file || file instanceof File, "Invalid file")
@@ -87,6 +89,7 @@ export function RaceForm({
         resolver: zodResolver(raceFormSchema),
         defaultValues: {
             name: "",
+            price: 0,
             description: "",
             maxParticipants: "0",
             startTime: "",
@@ -116,10 +119,7 @@ export function RaceForm({
     return (
         <div className="max-w-4xl mx-auto">
             <Form {...form}>
-                <form
-                    onSubmit={form.handleSubmit(handleSubmit)}
-                    className="space-y-8"
-                >
+                <form className="space-y-8">
                     <div className="space-y-2">
                         <h2 className="text-3xl font-normal text-gray-900">
                             Create a new race
@@ -153,21 +153,60 @@ export function RaceForm({
 
                             <FormField
                                 control={form.control}
-                                name="description"
+                                name="price"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className="text-sm font-medium text-gray-700">
-                                            Description
+                                            Registration fee
+                                        </FormLabel>
+                                        <FormControl>
+                                            <div className="relative mt-2">
+                                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                                                    ₱
+                                                </span>
+                                                <Input
+                                                    type="number"
+                                                    min={0}
+                                                    step="0.01"
+                                                    placeholder="0.00"
+                                                    className="h-12 pl-10 text-base border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md"
+                                                    {...field}
+                                                />
+                                            </div>
+                                        </FormControl>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Set to 0 for free races
+                                        </p>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="description"
+                                render={() => (
+                                    <FormItem>
+                                        <FormLabel className="text-sm font-medium text-gray-700">
+                                            Description{" "}
                                             <span className="text-gray-400 font-normal ml-2">
                                                 (Optional)
                                             </span>
                                         </FormLabel>
                                         <FormControl>
-                                            <Textarea
-                                                placeholder="Add a description for your race"
-                                                className="mt-2 min-h-24 text-base border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md resize-none"
-                                                {...field}
-                                            />
+                                            <div className="border rounded-md p-2 mt-2">
+                                                <RichTextEditor
+                                                    value={form.getValues(
+                                                        "description"
+                                                    )}
+                                                    onChange={(html) =>
+                                                        form.setValue(
+                                                            "description",
+                                                            html
+                                                        )
+                                                    }
+                                                />
+                                            </div>
                                         </FormControl>
                                         <FormMessage className="text-sm mt-2" />
                                     </FormItem>
@@ -669,6 +708,7 @@ export function RaceForm({
                                 Cancel
                             </Button>
                             <Button
+                                onClick={form.handleSubmit(handleSubmit)}
                                 type="submit"
                                 disabled={!route || isLoading}
                                 className="h-11 px-8 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"

@@ -14,6 +14,7 @@ export interface Race {
     id: string
     name: string
     description?: string
+    price?: number
     start_time: string
     end_time?: string
     actual_start_time?: string
