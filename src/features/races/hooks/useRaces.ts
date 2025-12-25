@@ -27,12 +27,7 @@ export interface Race {
     created_at?: string
     updated_at?: string
     routes?: RouteResponse
-    participants?: {
-        id: string
-        joined_at: string
-        bib_number?: number
-        user: UserInfo
-    }[]
+    participants?: Participant[]
     created_by_user: UserInfo
 }
 
@@ -42,7 +37,7 @@ export interface Participant {
     user_id: string
     bib_number?: number
     joined_at?: string
-    user?: UserInfo
+    user: UserInfo
 }
 
 export interface Tracking {
