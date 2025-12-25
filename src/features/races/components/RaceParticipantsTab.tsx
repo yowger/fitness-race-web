@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Users } from "lucide-react"
 import type { Participant, Race } from "../hooks/useRaces"
 import { getAvatarUrl } from "../../../lib/avatar"
+import { useUpdateParticipantBib } from "../hooks/useRaces"
 
 export default function RaceParticipantsTab({ race }: { race: Race }) {
     const [editingParticipantId, setEditingParticipantId] = useState<
@@ -9,6 +10,8 @@ export default function RaceParticipantsTab({ race }: { race: Race }) {
     >(null)
     const [editingBibValue, setEditingBibValue] = useState<string>("")
     const [error, setError] = useState<string>("")
+
+    const updateBibMutation = useUpdateParticipantBib()
 
     const handleDownloadCSV = () => {
         if (!race?.participants?.length) return
@@ -31,16 +34,7 @@ export default function RaceParticipantsTab({ race }: { race: Race }) {
         link.href = url
         link.download = `race-${race.id}-participants.csv`
         link.click()
-
         URL.revokeObjectURL(url)
-    }
-
-    const handleBibChange = (participantId: string, newBib: number) => {
-        console.log("Change bib for participant:", participantId, "to", newBib)
-
-        setEditingParticipantId(null)
-        setEditingBibValue("")
-        setError("")
     }
 
     const startEditing = (p: Participant) => {
@@ -55,8 +49,8 @@ export default function RaceParticipantsTab({ race }: { race: Race }) {
         setError("")
     }
 
-    const saveBib = (participantId: string) => {
-        if (race.participants === undefined) return
+    const saveBib = async (participantId: string) => {
+        if (!race?.participants) return
 
         const bibNumber = parseInt(editingBibValue)
         if (isNaN(bibNumber) || bibNumber <= 0) {
@@ -67,13 +61,23 @@ export default function RaceParticipantsTab({ race }: { race: Race }) {
         const duplicate = race.participants.some(
             (p) => p.id !== participantId && p.bib_number === bibNumber
         )
-
         if (duplicate) {
             setError("This bib number is already assigned")
             return
         }
 
-        handleBibChange(participantId, bibNumber)
+        try {
+            await updateBibMutation.mutateAsync({
+                race_id: race.id,
+                user_id: participantId,
+                bib_number: bibNumber,
+            })
+            cancelEditing()
+        } catch (err) {
+            if (err instanceof Error) {
+                setError(err.message || "Failed to update bib")
+            }
+        }
     }
 
     return (
@@ -96,6 +100,7 @@ export default function RaceParticipantsTab({ race }: { race: Race }) {
             {race?.participants?.length ? (
                 <div className="space-y-3">
                     {race.participants.map((p) => {
+                        console.log("🚀 ~ RaceParticipantsTab ~ p:", p)
                         const isEditing = editingParticipantId === p.id
                         return (
                             <div
@@ -144,7 +149,9 @@ export default function RaceParticipantsTab({ race }: { race: Race }) {
                                                 autoFocus
                                             />
                                             <button
-                                                onClick={() => saveBib(p.id)}
+                                                onClick={() =>
+                                                    saveBib(p.user.id)
+                                                }
                                                 className="px-2 py-1 text-xs font-medium text-green-600 hover:text-green-800 transition"
                                             >
                                                 Save
@@ -172,7 +179,6 @@ export default function RaceParticipantsTab({ race }: { race: Race }) {
                                                     Not assigned
                                                 </span>
                                             )}
-
                                             <button
                                                 onClick={() => startEditing(p)}
                                                 className="px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 transition"

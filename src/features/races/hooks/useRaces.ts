@@ -350,3 +350,29 @@ export const usePublishRaceResults = () => {
         },
     })
 }
+
+export const updateParticipantBib = async (input: {
+    race_id: string
+    user_id: string
+    bib_number: number
+}) => {
+    const res = await privateApi.patch(
+        "/api/group-races/participants/bib",
+        input
+    )
+    return res.data
+}
+
+export const useUpdateParticipantBib = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: updateParticipantBib,
+        onSuccess: (_, variables) => {
+            const raceId = variables.race_id
+            queryClient.invalidateQueries({
+                queryKey: ["race-participants", raceId],
+            })
+            queryClient.invalidateQueries({ queryKey: ["race", raceId] })
+        },
+    })
+}
