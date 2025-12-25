@@ -28,7 +28,7 @@ export const getRaceEventsByRaceId = async (
     return res.data
 }
 
-export const getRaceEventById = async (id: string): Promise<RaceEvent> => {
+export const getRaceEventById = async (id: string): Promise<RaceEvent[]> => {
     const res = await privateApi.get(`/api/race-events/${id}`)
     return res.data
 }
@@ -54,7 +54,7 @@ export const useRaceEvents = (raceId: string) => {
 }
 
 export const useRaceEvent = (id: string) => {
-    return useQuery<RaceEvent>({
+    return useQuery({
         queryKey: ["race-event", id],
         queryFn: () => getRaceEventById(id),
         enabled: !!id,

@@ -1,40 +1,159 @@
-import React, { useState } from "react"
-import { Calendar, Clock, MapPin, Users, Award, Info } from "lucide-react"
+import { useState } from "react"
+import { Calendar, Clock, MapPin, Users } from "lucide-react"
+import { useParams } from "react-router-dom"
+import {
+    useAddParticipant,
+    useRace,
+    useRemoveParticipant,
+} from "../hooks/useRaces"
+import { format } from "date-fns"
+import DOMPurify from "dompurify"
+import { useRaceEvent } from "../api/useRaceEvents"
+import Map, { Layer, Source } from "@vis.gl/react-maplibre"
+import { getAvatarUrl } from "../../../lib/avatar"
+import { getBoundsFromCoords } from "../../../lib/geo"
+import { useUser } from "../../auth/hooks/useUser"
+import { io } from "socket.io-client"
+import { toast } from "sonner"
 
-const RACE_DETAIL = {
-    id: "1",
-    name: "City Fun Run",
-    date: "Aug 25, 2025",
-    time: "5:00 AM",
-    location: "Cebu City Sports Complex",
-    status: "upcoming",
-    distance: "5K",
-    participants: 234,
-    maxParticipants: 500,
-    registrationFee: "₱350",
-    imageUrl:
-        "https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?w=800&q=80",
-    routeMapUrl:
-        "https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80",
-    host: {
-        name: "Cebu Sports Council",
-        avatar: "https://ui-avatars.com/api/?name=Cebu+Sports+Council&background=0D8ABC&color=fff",
-        description: "Promoting health and fitness in Cebu since 2010",
-    },
-    description:
-        "Join us for the annual City Fun Run! This family-friendly event promotes fitness and community spirit. The route takes you through the scenic streets of Cebu City, perfect for runners of all levels.",
-    schedule: [
-        { time: "4:30 AM", event: "Registration Opens" },
-        { time: "5:00 AM", event: "Race Start" },
-        { time: "6:30 AM", event: "Awards Ceremony" },
-        { time: "7:00 AM", event: "Event Ends" },
-    ],
+const MAP_STYLE =
+    "https://api.maptiler.com/maps/streets-v4/style.json?key=l60bj9KIXXKDXbsOvzuz"
+
+const formatDate = (dateString?: string) => {
+    if (!dateString) return ""
+    return format(new Date(dateString), "MMM d, yyyy")
 }
 
+const formatTime = (dateString?: string) => {
+    if (!dateString) return ""
+    return format(new Date(dateString), "h:mm a")
+}
+
+function createMarkup(htmlString: string) {
+    const sanitizedHTML = DOMPurify.sanitize(htmlString)
+    return { __html: sanitizedHTML }
+}
+
+const SOCKET_URL = import.meta.env.VITE_PUBLIC_SOCKET_URL
+
 export default function RaceDetailPage() {
-    const [activeTab, setActiveTab] = useState("details")
+    const socket = io(SOCKET_URL)
+    const { data: user } = useUser()
+    const { id } = useParams()
+    const { data: race, refetch: refetchRace } = useRace(id!)
+
+    const { data: raceEvent } = useRaceEvent(id!)
+
+    const participantCount = race?.participants?.length ?? 0
+    const maxParticipants = race?.max_participants ?? 0
+
     const participationPercentage =
-        (RACE_DETAIL.participants / RACE_DETAIL.maxParticipants) * 100
+        maxParticipants > 0
+            ? Math.min((participantCount / maxParticipants) * 100, 100)
+            : 0
+
+    const registrationFeeLabel =
+        race?.price && race.price > 0
+            ? `₱${race.price.toLocaleString()}`
+            : "Free"
+
+    const [activeTab, setActiveTab] = useState("details")
+
+    const coords =
+        race?.routes?.geojson.features?.[0]?.geometry?.coordinates ?? []
+    let flatCoords: [number, number][] = []
+
+    if (Array.isArray(coords[0])) {
+        flatCoords = coords as [number, number][]
+    }
+
+    const firstCoord: [number, number] = flatCoords[0] ?? [0, 0]
+    const lastCoord: [number, number] = flatCoords[flatCoords.length - 1] ?? [
+        0, 0,
+    ]
+
+    const lineData = {
+        type: "Feature",
+        properties: {},
+        geometry: {
+            type: "LineString",
+            coordinates: flatCoords,
+        },
+    } as const
+
+    const [isJoining, setIsJoining] = useState(false)
+    const isHost = race?.created_by_user?.id === user?.id
+    const hasJoined = race?.participants?.some((p) => p.user.id === user?.id)
+
+    const addParticipantMutation = useAddParticipant()
+    const removeParticipantMutation = useRemoveParticipant()
+
+    const handleJoinRace = async () => {
+        if (!race || !user) return
+
+        setIsJoining(true)
+
+        try {
+            await addParticipantMutation.mutateAsync({
+                race_id: race.id,
+                user_id: user.id,
+            })
+
+            refetchRace()
+            socket.emit("joinRace", { raceId: race.id, userId: user.id })
+
+            toast.success("Successfully joined the race!")
+        } catch (err) {
+            if (err instanceof Error) {
+                toast.error(err.message || "Failed to join race.")
+            }
+        } finally {
+            setIsJoining(false)
+        }
+    }
+
+    const handleLeaveRace = async () => {
+        if (!race || !user) return
+
+        try {
+            await removeParticipantMutation.mutateAsync({
+                race_id: race.id,
+                user_id: user.id,
+            })
+
+            refetchRace()
+            socket.emit("leaveRace", { raceId: race.id, userId: user.id })
+
+            toast.success("You left the race")
+        } catch (err) {
+            if (err instanceof Error) toast.error(err.message)
+        }
+    }
+
+    const handleDownloadCSV = () => {
+        if (!race?.participants?.length) return
+
+        const headers = ["Bib Number", "Name", "User ID"]
+        const rows = race.participants.map((p) => [
+            p.bib_number ?? "",
+            p.user.full_name,
+            p.user.id,
+        ])
+
+        const csvContent = [headers, ...rows]
+            .map((row) => row.join(","))
+            .join("\n")
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+        const url = URL.createObjectURL(blob)
+
+        const link = document.createElement("a")
+        link.href = url
+        link.download = `race-${race.id}-participants.csv`
+        link.click()
+
+        URL.revokeObjectURL(url)
+    }
 
     return (
         <div className="min-h-screen bg-white text-gray-900">
@@ -192,8 +311,8 @@ export default function RaceDetailPage() {
 
                 <div className="relative">
                     <img
-                        src={RACE_DETAIL.imageUrl}
-                        alt={RACE_DETAIL.name}
+                        src={race?.banner_url || race?.routes?.map_url}
+                        alt={race?.routes?.name || ""}
                         className="w-full h-[60vh] object-cover opacity-40 slide-in"
                     />
 
@@ -201,31 +320,39 @@ export default function RaceDetailPage() {
                         <div className="w-full max-w-7xl mx-auto px-6 pb-16">
                             <div className="slide-in">
                                 <div className="flex items-center gap-4 mb-4">
-                                    <span className="status-badge px-6 py-2 bg-lime-green/20 border-2 border-lime-green text-lime-green font-heading text-lg uppercase">
-                                        {RACE_DETAIL.status}
+                                    <span className="status-badge px-6 py-2 bg-lime-green/20 border-2 border-gray-700 text-lime-green font-heading text-lg uppercase">
+                                        {race?.status}
                                     </span>
-                                    <span className="px-6 py-2 bg-electric-cyan/20 border border-electric-cyan text-electric-cyan font-heading text-lg">
-                                        {RACE_DETAIL.distance}
+                                    <span className="px-6 py-2 bg-electric-cyan/20 border border-gray-700 text-electric-cyan font-heading text-lg">
+                                        {race?.routes?.distance?.toFixed(2)} km
                                     </span>
                                 </div>
 
-                                <h1 className="font-display text-8xl md:text-9xl leading-none mb-4 bg-gradient-to-r from-gray-900 via-electric-cyan to-lime-green bg-clip-text text-transparent">
-                                    {RACE_DETAIL.name}
+                                <h1 className="font-display text-8xl md:text-9xl leading-none mb-4 bg-linear-to-r from-gray-900 via-electric-cyan to-lime-green bg-clip-text text-transparent">
+                                    {race?.name}
                                 </h1>
 
                                 <div className="flex flex-wrap gap-6 text-gray-600 font-body text-lg">
                                     <div className="flex items-center gap-2">
                                         <Calendar className="w-5 h-5 text-electric-cyan" />
-                                        <span>{RACE_DETAIL.date}</span>
+                                        <span>
+                                            {formatDate(race?.start_time)}
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Clock className="w-5 h-5 text-electric-cyan" />
-                                        <span>{RACE_DETAIL.time}</span>
+                                        <span>
+                                            {formatTime(race?.start_time)}
+                                        </span>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <MapPin className="w-5 h-5 text-hot-orange" />
-                                        <span>{RACE_DETAIL.location}</span>
-                                    </div>
+                                    {race?.routes?.start_address && (
+                                        <div className="flex items-center gap-2">
+                                            <MapPin className="w-5 h-5 text-hot-orange" />
+                                            <span>
+                                                {race?.routes?.start_address}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -270,6 +397,20 @@ export default function RaceDetailPage() {
                                 >
                                     ROUTE
                                 </button>
+                                {isHost && (
+                                    <button
+                                        onClick={() =>
+                                            setActiveTab("participants")
+                                        }
+                                        className={`tab-button pb-4 ${
+                                            activeTab === "participants"
+                                                ? "active text-gray-900"
+                                                : "text-gray-400"
+                                        }`}
+                                    >
+                                        PARTICIPANTS
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -279,23 +420,47 @@ export default function RaceDetailPage() {
                                 <h2 className="font-display text-4xl mb-6 text-gray-900">
                                     About the Race
                                 </h2>
-                                <p className="font-body text-lg text-gray-700 leading-relaxed">
-                                    {RACE_DETAIL.description}
-                                </p>
+                                {race?.description && (
+                                    <div
+                                        // className="font-body text-gray-700 "
+                                        className="rich-text-editor prose lg:prose-lg text-gray-700 "
+                                        dangerouslySetInnerHTML={createMarkup(
+                                            race.description
+                                        )}
+                                    ></div>
+                                )}
 
                                 <div className="mt-8 p-6 bg-gray-50 border border-gray-300 rounded-lg">
                                     <div className="flex items-start gap-4">
                                         <img
-                                            src={RACE_DETAIL.host.avatar}
-                                            alt={RACE_DETAIL.host.name}
+                                            src={getAvatarUrl(
+                                                race?.created_by_user
+                                                    .full_name || "",
+                                                {
+                                                    size: 64,
+                                                    rounded: false,
+                                                }
+                                            )}
+                                            alt={
+                                                race?.created_by_user.full_name
+                                            }
                                             className="w-16 h-16 rounded-full"
                                         />
                                         <div>
-                                            <h3 className="font-heading text-2xl text-gray-900 mb-1">
-                                                {RACE_DETAIL.host.name}
+                                            <h3 className="flex font-heading items-center gap-2 text-2xl text-gray-900 mb-1">
+                                                {
+                                                    race?.created_by_user
+                                                        .full_name
+                                                }
+
+                                                {isHost && (
+                                                    <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                                                        Host
+                                                    </span>
+                                                )}
                                             </h3>
                                             <p className="font-body text-gray-600">
-                                                {RACE_DETAIL.host.description}
+                                                Promoting health and fitness
                                             </p>
                                         </div>
                                     </div>
@@ -308,23 +473,30 @@ export default function RaceDetailPage() {
                                 <h2 className="font-display text-4xl mb-6 text-gray-900">
                                     Event Schedule
                                 </h2>
-                                {RACE_DETAIL.schedule.map((item, index) => (
+
+                                {raceEvent?.map((event) => (
                                     <div
-                                        key={index}
-                                        className="flex items-center gap-6 p-5 bg-gray-50 border border-gray-200 rounded-lg hover:border-electric-cyan/50 transition-colors"
-                                        style={{
-                                            animationDelay: `${index * 0.1}s`,
-                                        }}
+                                        key={event.id}
+                                        className="flex items-start gap-6 p-5 bg-gray-50 border border-gray-200 rounded-lg"
                                     >
-                                        <div className="flex-shrink-0 w-24">
+                                        <div className="shrink-0 w-28">
                                             <span className="font-heading text-2xl text-electric-cyan">
-                                                {item.time}
+                                                {formatTime(
+                                                    event.scheduled_time
+                                                )}
                                             </span>
                                         </div>
-                                        <div className="flex-grow">
-                                            <span className="font-body text-lg text-gray-700">
-                                                {item.event}
-                                            </span>
+
+                                        <div className="grow space-y-1">
+                                            <div className="font-body text-lg text-gray-700">
+                                                {event.name}
+                                            </div>
+
+                                            {event.description && (
+                                                <div className="font-body text-sm text-gray-500">
+                                                    {event.description}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -337,31 +509,274 @@ export default function RaceDetailPage() {
                                     Race Route
                                 </h2>
                                 <div className="rounded-lg overflow-hidden border-2 border-electric-cyan/30">
-                                    <img
-                                        src={RACE_DETAIL.routeMapUrl}
-                                        alt="Race Route Map"
-                                        className="w-full h-[500px] object-cover"
-                                    />
+                                    <div className="border-b border-gray-200">
+                                        <div className="relative h-[450px]">
+                                            {flatCoords.length > 0 ? (
+                                                <Map
+                                                    style={{
+                                                        width: "100%",
+                                                        height: "100%",
+                                                    }}
+                                                    mapStyle={MAP_STYLE}
+                                                    attributionControl={false}
+                                                    onLoad={(e) => {
+                                                        if (
+                                                            flatCoords.length >
+                                                            1
+                                                        ) {
+                                                            const bounds =
+                                                                getBoundsFromCoords(
+                                                                    flatCoords
+                                                                )
+                                                            e.target.fitBounds(
+                                                                bounds,
+                                                                {
+                                                                    padding: 60,
+                                                                    duration: 800,
+                                                                }
+                                                            )
+                                                        }
+                                                    }}
+                                                >
+                                                    <Source
+                                                        id="race-route"
+                                                        type="geojson"
+                                                        data={lineData}
+                                                    >
+                                                        <Layer
+                                                            id="race-line-outline"
+                                                            type="line"
+                                                            paint={{
+                                                                "line-color":
+                                                                    "#ffffff",
+                                                                "line-width": 10,
+                                                                "line-opacity": 1,
+                                                            }}
+                                                        />
+
+                                                        <Layer
+                                                            id="race-line"
+                                                            type="line"
+                                                            paint={{
+                                                                "line-color":
+                                                                    "#F97316",
+                                                                "line-width": 5,
+                                                                "line-opacity": 0.95,
+                                                            }}
+                                                        />
+                                                    </Source>
+
+                                                    <Source
+                                                        id="start-point"
+                                                        type="geojson"
+                                                        data={{
+                                                            type: "Feature",
+                                                            geometry: {
+                                                                type: "Point",
+                                                                coordinates:
+                                                                    firstCoord,
+                                                            },
+                                                            properties: {},
+                                                        }}
+                                                    >
+                                                        <Layer
+                                                            id="start-circle"
+                                                            type="circle"
+                                                            paint={{
+                                                                "circle-radius": 6,
+                                                                "circle-color":
+                                                                    "#22C55E",
+                                                                "circle-stroke-width": 2,
+                                                                "circle-stroke-color":
+                                                                    "#ffffff",
+                                                            }}
+                                                        />
+                                                    </Source>
+
+                                                    <Source
+                                                        id="end-point"
+                                                        type="geojson"
+                                                        data={{
+                                                            type: "Feature",
+                                                            geometry: {
+                                                                type: "Point",
+                                                                coordinates:
+                                                                    lastCoord,
+                                                            },
+                                                            properties: {},
+                                                        }}
+                                                    >
+                                                        <Layer
+                                                            id="end-circle"
+                                                            type="circle"
+                                                            paint={{
+                                                                "circle-radius": 6,
+                                                                "circle-color":
+                                                                    "#EF4444",
+                                                                "circle-stroke-width": 2,
+                                                                "circle-stroke-color":
+                                                                    "#ffffff",
+                                                            }}
+                                                        />
+                                                    </Source>
+                                                </Map>
+                                            ) : (
+                                                <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
+                                                    <MapPin className="w-16 h-16 text-gray-300 mb-3" />
+                                                    <p className="text-gray-500 font-medium">
+                                                        No route available
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {flatCoords.length > 0 && (
+                                            <div className="px-8 py-4 bg-gray-50 flex items-center justify-center gap-8">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                                    <span className="text-sm font-medium text-gray-700">
+                                                        Start Point
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                                    <span className="text-sm font-medium text-gray-700">
+                                                        Finish Point
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
+                            </div>
+                        )}
+
+                        {activeTab === "participants" && isHost && (
+                            <div className="fade-in space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="font-display text-4xl text-gray-900">
+                                        Registered Participants
+                                    </h2>
+
+                                    {/* CSV button – shown only if there are participants */}
+                                    {race?.participants?.length ? (
+                                        <button
+                                            onClick={handleDownloadCSV}
+                                            className="px-4 py-2 text-sm font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+                                        >
+                                            Download CSV
+                                        </button>
+                                    ) : null}
+                                </div>
+
+                                {race?.participants?.length ? (
+                                    <div className="space-y-3">
+                                        {race.participants.map((p) => (
+                                            <div
+                                                key={p.id}
+                                                className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <img
+                                                        src={getAvatarUrl(
+                                                            p.user.full_name ||
+                                                                ""
+                                                        )}
+                                                        className="w-10 h-10 rounded-full"
+                                                    />
+
+                                                    <div>
+                                                        <div className="font-body font-medium text-gray-800">
+                                                            {p.user.full_name}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500">
+                                                            Registered
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Bib number */}
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-gray-500 uppercase tracking-wide">
+                                                        Bib
+                                                    </span>
+
+                                                    {p.bib_number ? (
+                                                        <span className="px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-700">
+                                                            #{p.bib_number}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-3 py-1 text-xs rounded-full bg-gray-200 text-gray-500">
+                                                            Not assigned
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-16 bg-gray-50 border border-dashed border-gray-300 rounded-lg">
+                                        <Users className="w-10 h-10 text-gray-300 mb-3" />
+                                        <p className="font-body text-gray-600 font-medium">
+                                            No participants yet
+                                        </p>
+                                        <p className="text-sm text-gray-500">
+                                            Participants will appear here once
+                                            they register.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
 
                     {/* Right Column */}
                     <div className="space-y-6">
-                        <div className="info-card fade-in-delay-1 p-8 bg-gradient-to-br from-electric-cyan/10 to-lime-green/10 border-2 border-electric-cyan/50 rounded-lg glow-cyan">
+                        <div className="info-card fade-in-delay-1 p-8 bg-linear-to-br from-electric-cyan/10 to-lime-green/10 border-2 border-electric-cyan/50 rounded-lg glow-cyan">
                             <div className="text-center mb-6">
                                 <div className="font-display text-5xl text-gray-900 mb-2">
-                                    {RACE_DETAIL.registrationFee}
+                                    {registrationFeeLabel}
                                 </div>
                                 <div className="font-body text-sm text-gray-500 uppercase tracking-wider">
                                     Registration Fee
                                 </div>
                             </div>
 
-                            <button className="w-full py-4 bg-gradient-to-r from-electric-cyan to-lime-green text-gray-900 font-heading text-2xl rounded-lg hover:shadow-2xl hover:shadow-electric-cyan/50 transition-shadow">
-                                REGISTER NOW
-                            </button>
+                            {!isHost && (
+                                <>
+                                    {hasJoined ? (
+                                        <button
+                                            onClick={handleLeaveRace}
+                                            disabled={
+                                                removeParticipantMutation.isPending
+                                            }
+                                            className="w-full py-4 bg-gray-700 text-white font-heading text-2xl rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {removeParticipantMutation.isPending
+                                                ? "Leaving..."
+                                                : "Leave Race"}
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={handleJoinRace}
+                                            disabled={
+                                                isJoining ||
+                                                race?.status !== "upcoming"
+                                            }
+                                            className={`w-full py-4 font-heading text-2xl rounded-lg transition-all
+                    ${
+                        race?.status === "upcoming"
+                            ? "bg-linear-to-br from-electric-cyan to-lime-green text-gray-900 hover:shadow-2xl hover:shadow-electric-cyan/50"
+                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }
+                `}
+                                        >
+                                            {isJoining
+                                                ? "Registering..."
+                                                : "REGISTER NOW"}
+                                        </button>
+                                    )}
+                                </>
+                            )}
                         </div>
 
                         {/* Quick Stats */}
@@ -379,8 +794,8 @@ export default function RaceDetailPage() {
                                         </span>
                                     </div>
                                     <span className="font-heading text-xl text-gray-900">
-                                        {RACE_DETAIL.participants}/
-                                        {RACE_DETAIL.maxParticipants}
+                                        {race?.participants?.length}/
+                                        {race?.max_participants}
                                     </span>
                                 </div>
 
@@ -398,7 +813,7 @@ export default function RaceDetailPage() {
                                 </p>
                             </div>
 
-                            <div className="pt-4 border-t border-gray-200 space-y-3">
+                            {/* <div className="pt-4 border-t border-gray-200 space-y-3">
                                 <div className="flex items-start gap-3">
                                     <Award className="w-5 h-5 text-lime-green mt-1 flex-shrink-0" />
                                     <div>
@@ -424,25 +839,7 @@ export default function RaceDetailPage() {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        {/* Share Section */}
-                        <div className="info-card fade-in-delay-3 p-6 bg-gray-50 border border-gray-200 rounded-lg">
-                            <h3 className="font-heading text-xl text-gray-900 mb-4">
-                                Share This Race
-                            </h3>
-                            <div className="flex gap-3">
-                                <button className="flex-1 py-3 bg-white hover:bg-gray-100 font-body text-sm rounded border border-gray-300 transition-colors">
-                                    Facebook
-                                </button>
-                                <button className="flex-1 py-3 bg-white hover:bg-gray-100 font-body text-sm rounded border border-gray-300 transition-colors">
-                                    Twitter
-                                </button>
-                                <button className="flex-1 py-3 bg-white hover:bg-gray-100 font-body text-sm rounded border border-gray-300 transition-colors">
-                                    Copy Link
-                                </button>
-                            </div>
+                            </div> */}
                         </div>
                     </div>
                 </div>
