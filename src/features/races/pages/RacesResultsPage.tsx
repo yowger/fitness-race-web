@@ -1,6 +1,15 @@
 import { Fragment, useState } from "react"
 import Map, { Marker, Source, Layer } from "@vis.gl/react-maplibre"
-import { CheckCircle, AlertCircle, MapPin, Flag, Play } from "lucide-react"
+import {
+    CheckCircle,
+    AlertCircle,
+    MapPin,
+    Flag,
+    Play,
+    Users,
+    Trophy,
+    Activity,
+} from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
 
 import {
@@ -12,6 +21,7 @@ import {
 } from "../hooks/useRaces"
 import { useUser } from "../../auth/hooks/useUser"
 import { ResultsTable } from "../components/ResultsTable"
+import { getBoundsFromCoords } from "../../../lib/geo"
 
 export default function RacesResultsPage() {
     const { id: raceId } = useParams()
@@ -84,16 +94,34 @@ export default function RacesResultsPage() {
     if (!isHost) {
         return (
             <div className="min-h-screen bg-gray-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="mb-8 flex items-start justify-between">
-                        <div>
-                            <h1 className="text-3xl font-normal text-gray-900 mb-2">
-                                Race Results Verification
-                            </h1>
-                            <p className="text-base text-gray-600">
-                                You are not the host of this race
-                            </p>
+                <style>{`
+                    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Antonio:wght@700&family=Work+Sans:wght@400;500;600;700&display=swap');
+                    
+                    .font-display {
+                        font-family: 'Antonio', sans-serif;
+                        letter-spacing: -0.02em;
+                    }
+                    
+                    .font-heading {
+                        font-family: 'Bebas Neue', sans-serif;
+                        letter-spacing: 0.02em;
+                    }
+                    
+                    .font-body {
+                        font-family: 'Work Sans', sans-serif;
+                    }
+                `}</style>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <div className="text-center">
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100 mb-6">
+                            <AlertCircle className="w-10 h-10 text-red-600" />
                         </div>
+                        <h1 className="font-display text-5xl text-zinc-900 mb-4">
+                            Access Denied
+                        </h1>
+                        <p className="font-body text-lg text-zinc-600">
+                            You are not the host of this race
+                        </p>
                     </div>
                 </div>
             </div>
@@ -101,309 +129,436 @@ export default function RacesResultsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="mb-8 flex items-start justify-between">
-                    <div>
-                        <h1 className="text-3xl font-normal text-gray-900 mb-2">
-                            Race Results Verification
-                        </h1>
-                        <p className="text-base text-gray-600">
+        <div className="min-h-screen bg-gray-50 font-body">
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Antonio:wght@700&family=Work+Sans:wght@400;500;600;700&display=swap');
+                
+                .font-display {
+                    font-family: 'Antonio', sans-serif;
+                    letter-spacing: -0.02em;
+                }
+                
+                .font-heading {
+                    font-family: 'Bebas Neue', sans-serif;
+                    letter-spacing: 0.02em;
+                }
+                
+                .font-body {
+                    font-family: 'Work Sans', sans-serif;
+                }
+
+                .fade-in {
+                    animation: fadeIn 0.6s ease-out;
+                }
+
+                .fade-in-delay-1 {
+                    animation: fadeIn 0.6s ease-out 0.2s both;
+                }
+
+                .fade-in-delay-2 {
+                    animation: fadeIn 0.6s ease-out 0.4s both;
+                }
+
+                .fade-in-delay-3 {
+                    animation: fadeIn 0.6s ease-out 0.6s both;
+                }
+
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                .stat-card {
+                    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+
+                .stat-card:hover {
+                    transform: translateY(-4px);
+                    box-shadow: 0 8px 24px rgba(8, 145, 178, 0.15);
+                }
+
+                .map-container {
+                    border: 2px solid rgb(209, 213, 219);
+                    transition: border-color 0.3s ease;
+                }
+
+                .map-container:hover {
+                    border-color: rgb(8, 145, 178);
+                }
+
+                .publish-button {
+                    position: relative;
+                    overflow: hidden;
+                }
+
+                .publish-button::after {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 0;
+                    height: 0;
+                    border-radius: 50%;
+                    background: rgba(255, 255, 255, 0.3);
+                    transform: translate(-50%, -50%);
+                    transition: width 0.6s, height 0.6s;
+                }
+
+                .publish-button:hover::after {
+                    width: 300px;
+                    height: 300px;
+                }
+
+                .results-panel {
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                }
+            `}</style>
+
+            {/* Header Section */}
+            <div className="bg-white border-b-2 border-gray-200 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div className="fade-in">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-600 to-green-600 flex items-center justify-center">
+                                <Trophy className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="font-display text-5xl text-zinc-900 leading-none">
+                                    Results Verification
+                                </h1>
+                            </div>
+                        </div>
+                        <p className="font-body text-lg text-zinc-600 ml-15">
                             Review and adjust the final standings before
                             publishing
                         </p>
                     </div>
                 </div>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white rounded-lg border border-gray-200 p-5">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Statistics Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div className="stat-card fade-in-delay-1 bg-white rounded-lg border-2 border-gray-200 p-6 shadow-sm">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600 mb-1">
+                                <p className="font-body text-sm text-zinc-600 uppercase tracking-wider mb-2">
                                     Total Participants
                                 </p>
-                                <p className="text-3xl font-normal text-gray-900">
+                                <p className="font-display text-5xl text-zinc-900">
                                     {totalParticipantsCount}
                                 </p>
                             </div>
-                            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
-                                <MapPin className="text-blue-600" size={24} />
+                            <div className="w-16 h-16 rounded-full bg-cyan-100 flex items-center justify-center">
+                                <Users className="text-cyan-600 w-8 h-8" />
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-lg border border-gray-200 p-5">
+                    <div className="stat-card fade-in-delay-2 bg-white rounded-lg border-2 border-green-200 p-6 shadow-sm">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600 mb-1">
+                                <p className="font-body text-sm text-zinc-600 uppercase tracking-wider mb-2">
                                     Finished
                                 </p>
-                                <p className="text-3xl font-normal text-gray-900">
+                                <p className="font-display text-5xl text-green-600">
                                     {finishedCount}
                                 </p>
                             </div>
-                            <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center">
-                                <CheckCircle
-                                    className="text-green-600"
-                                    size={24}
-                                />
+                            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                                <CheckCircle className="text-green-600 w-8 h-8" />
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-lg border border-gray-200 p-5">
+                    <div className="stat-card fade-in-delay-3 bg-white rounded-lg border-2 border-red-200 p-6 shadow-sm">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600 mb-1">
+                                <p className="font-body text-sm text-zinc-600 uppercase tracking-wider mb-2">
                                     Did Not Finish
                                 </p>
-                                <p className="text-3xl font-normal text-gray-900">
+                                <p className="font-display text-5xl text-red-600">
                                     {dnfCount}
                                 </p>
                             </div>
-                            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
-                                <AlertCircle
-                                    className="text-red-600"
-                                    size={24}
+                            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+                                <AlertCircle className="text-red-600 w-8 h-8" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main Content Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+                    {/* Map Section */}
+                    <div className="lg:col-span-4 fade-in">
+                        <div className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden shadow-sm">
+                            <div className="border-b-2 border-gray-200 px-6 py-5 bg-gradient-to-r from-gray-50 to-white">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <MapPin className="w-6 h-6 text-cyan-600" />
+                                    <h2 className="font-heading text-2xl text-zinc-900">
+                                        RACE ROUTE & POSITIONS
+                                    </h2>
+                                </div>
+                                <p className="font-body text-sm text-zinc-600">
+                                    Participants' last recorded positions on the
+                                    course
+                                </p>
+                            </div>
+                            <div className="h-[450px] map-container">
+                                <Map
+                                    mapStyle="https://api.maptiler.com/maps/streets-v4/style.json?key=l60bj9KIXXKDXbsOvzuz"
+                                    onLoad={(e) => {
+                                        if (flatCoords.length > 1) {
+                                            const bounds =
+                                                getBoundsFromCoords(flatCoords)
+                                            e.target.fitBounds(bounds, {
+                                                padding: 60,
+                                                duration: 800,
+                                            })
+                                        }
+                                    }}
+                                    attributionControl={false}
+                                >
+                                    <Source
+                                        id="route"
+                                        type="geojson"
+                                        data={{
+                                            type: "FeatureCollection",
+                                            features: [
+                                                {
+                                                    type: "Feature",
+                                                    geometry: {
+                                                        type: "LineString",
+                                                        coordinates:
+                                                            flatCoords || [],
+                                                    },
+                                                    properties: {},
+                                                },
+                                            ],
+                                        }}
+                                    >
+                                        <Layer
+                                            id="race-line-outline"
+                                            type="line"
+                                            paint={{
+                                                "line-color": "#ffffff",
+                                                "line-width": 10,
+                                                "line-opacity": 1,
+                                            }}
+                                        />
+
+                                        <Layer
+                                            id="race-line"
+                                            type="line"
+                                            paint={{
+                                                "line-color": "#F97316",
+                                                "line-width": 5,
+                                                "line-opacity": 0.95,
+                                            }}
+                                        />
+                                    </Source>
+
+                                    <Marker
+                                        longitude={firstCoord[0]}
+                                        latitude={firstCoord[1]}
+                                        anchor="center"
+                                    >
+                                        <div className="p-2 bg-green-600 rounded-full shadow-lg text-white">
+                                            <Play size={18} />
+                                        </div>
+                                    </Marker>
+
+                                    <Marker
+                                        longitude={lastCoord[0]}
+                                        latitude={lastCoord[1]}
+                                        anchor="center"
+                                    >
+                                        <div className="p-2 bg-red-600 rounded-full shadow-lg text-white">
+                                            <Flag size={18} />
+                                        </div>
+                                    </Marker>
+
+                                    {raceTracking?.map((t, i) => {
+                                        const userTracks = raceTracking.filter(
+                                            (u) => u.user_id === t.user_id
+                                        )
+                                        const coordinates = userTracks.map(
+                                            (u) => [u.longitude, u.latitude]
+                                        )
+                                        if (!coordinates.length) return null
+
+                                        const lastPos =
+                                            coordinates[coordinates.length - 1]
+
+                                        const isActive =
+                                            hoveredUserId === t.user_id ||
+                                            selectedUserId === t.user_id
+
+                                        return (
+                                            <Fragment
+                                                key={`track-${t.user_id}-${i}`}
+                                            >
+                                                <Source
+                                                    id={`track-${t.user_id}`}
+                                                    type="geojson"
+                                                    data={{
+                                                        type: "Feature",
+                                                        geometry: {
+                                                            type: "LineString",
+                                                            coordinates,
+                                                        },
+                                                        properties: {
+                                                            user_id: t.user_id,
+                                                            name: t.users
+                                                                .full_name,
+                                                            bib_number:
+                                                                t.bib_number,
+                                                        },
+                                                    }}
+                                                >
+                                                    <Layer
+                                                        id={`track-line-${t.user_id}`}
+                                                        type="line"
+                                                        paint={{
+                                                            "line-color":
+                                                                isActive
+                                                                    ? "#0891b2"
+                                                                    : "#888",
+                                                            "line-width":
+                                                                isActive
+                                                                    ? 6
+                                                                    : 3,
+                                                            "line-opacity": 0.8,
+                                                        }}
+                                                    />
+                                                </Source>
+
+                                                <Marker
+                                                    longitude={lastPos[0]}
+                                                    latitude={lastPos[1]}
+                                                >
+                                                    <div
+                                                        className={`rounded-full flex items-center justify-center border-3 border-white transition-all ${
+                                                            isActive
+                                                                ? "w-8 h-8 bg-cyan-700 shadow-lg"
+                                                                : "w-7 h-7 bg-cyan-500 shadow-md"
+                                                        }`}
+                                                    >
+                                                        <span className="text-white text-xs font-bold">
+                                                            {t.bib_number ??
+                                                                "?"}
+                                                        </span>
+
+                                                        {isActive && (
+                                                            <div className="absolute -top-9 left-1/2 transform -translate-x-1/2 bg-zinc-900 text-white px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shadow-lg">
+                                                                {
+                                                                    t.users
+                                                                        .full_name
+                                                                }
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </Marker>
+                                            </Fragment>
+                                        )
+                                    })}
+                                </Map>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Results Table Section */}
+                    <div className="lg:col-span-8 fade-in">
+                        <div className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden shadow-sm results-panel">
+                            <div className="border-b-2 border-gray-200 px-6 py-5 bg-linear-to-r from-gray-50 to-white">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <Activity className="w-6 h-6 text-green-600" />
+                                    <h2 className="font-heading text-2xl text-zinc-900">
+                                        FINAL STANDINGS
+                                    </h2>
+                                </div>
+                                <p className="font-body text-sm text-zinc-600">
+                                    Drag rows to adjust positions or use the
+                                    arrow buttons
+                                </p>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                                <ResultsTable
+                                    results={results || []}
+                                    selectedUserId={selectedUserId}
+                                    onRowHover={onRowHover}
+                                    onRowClick={onRowClick}
+                                    onResultsChange={onResultsChange}
                                 />
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-                    <div className="lg:col-span-7 bg-white rounded-lg border border-gray-200 overflow-hidden mb-6 shadow-sm">
-                        <div className="border-b border-gray-200 px-6 py-4">
-                            <h2 className="text-lg font-medium text-gray-900">
-                                Race Route & Positions
-                            </h2>
-                            <p className="text-sm text-gray-600 mt-1">
-                                Participants' last recorded positions on the
-                                course
+                {/* Action Bar */}
+                <div className="fade-in bg-white border-2 border-gray-200 rounded-lg p-6 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center">
+                                <AlertCircle className="w-5 h-5 text-cyan-600" />
+                            </div>
+                            <p className="font-body text-base text-zinc-700">
+                                Make sure all positions are correct before
+                                publishing
                             </p>
                         </div>
-                        <div className="h-[450px]">
-                            <Map
-                                mapStyle="https://api.maptiler.com/maps/streets-v4/style.json?key=l60bj9KIXXKDXbsOvzuz"
-                                initialViewState={{
-                                    longitude: flatCoords[0][0],
-                                    latitude: flatCoords[0][1],
-                                    zoom: 14,
-                                }}
-                                attributionControl={false}
+                        <div className="flex gap-3">
+                            {/* <button
+                                disabled={isPublishing}
+                                className="px-8 py-3 border-2 border-gray-300 rounded-lg font-heading text-lg text-zinc-700 bg-white hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                             >
-                                <Source
-                                    id="route"
-                                    type="geojson"
-                                    data={{
-                                        type: "FeatureCollection",
-                                        features: [
-                                            {
-                                                type: "Feature",
-                                                geometry: {
-                                                    type: "LineString",
-                                                    coordinates:
-                                                        flatCoords || [],
-                                                },
-                                                properties: {},
-                                            },
-                                        ],
-                                    }}
-                                >
-                                    <Layer
-                                        id="route-line"
-                                        type="line"
-                                        paint={{
-                                            "line-width": 5,
-                                            "line-color": "#1a73e8",
-                                            "line-opacity": 0.6,
-                                        }}
-                                    />
-                                </Source>
-
-                                <Marker
-                                    longitude={firstCoord[0]}
-                                    latitude={firstCoord[1]}
-                                >
-                                    <div className="relative">
-                                        {/* <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-medium whitespace-nowrap shadow-lg">
-                                        START
-                                    </div> */}
-                                        <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center shadow-xl border-2 border-white">
-                                            <Play
-                                                className="text-white"
-                                                size={16}
-                                            />
-                                        </div>
-                                    </div>
-                                </Marker>
-
-                                <Marker
-                                    longitude={lastCoord[0]}
-                                    latitude={lastCoord[1]}
-                                >
-                                    <div className="relative">
-                                        {/* <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-2 py-1 rounded text-xs font-medium whitespace-nowrap shadow-lg">
-                                        FINISH
-                                    </div> */}
-                                        <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center shadow-xl border-2 border-white">
-                                            <Flag
-                                                className="text-white"
-                                                size={16}
-                                            />
-                                        </div>
-                                    </div>
-                                </Marker>
-
-                                {raceTracking?.map((t, i) => {
-                                    const userTracks = raceTracking.filter(
-                                        (u) => u.user_id === t.user_id
-                                    )
-                                    const coordinates = userTracks.map((u) => [
-                                        u.longitude,
-                                        u.latitude,
-                                    ])
-                                    if (!coordinates.length) return null
-
-                                    const lastPos =
-                                        coordinates[coordinates.length - 1]
-
-                                    const isActive =
-                                        hoveredUserId === t.user_id ||
-                                        selectedUserId === t.user_id
-
-                                    return (
-                                        <Fragment
-                                            key={`track-${t.user_id}-${i}`}
+                                CANCEL
+                            </button> */}
+                            <button
+                                onClick={confirmResults}
+                                disabled={isPublishing}
+                                className="publish-button flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-cyan-600 to-green-600 text-white rounded-lg font-heading text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                            >
+                                {isPublishing ? (
+                                    <>
+                                        <svg
+                                            className="animate-spin h-5 w-5 text-white"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
                                         >
-                                            <Source
-                                                id={`track-${t.user_id}`}
-                                                type="geojson"
-                                                data={{
-                                                    type: "Feature",
-                                                    geometry: {
-                                                        type: "LineString",
-                                                        coordinates,
-                                                    },
-                                                    properties: {
-                                                        user_id: t.user_id,
-                                                        name: t.users.full_name,
-                                                        bib_number:
-                                                            t.bib_number,
-                                                    },
-                                                }}
-                                            >
-                                                <Layer
-                                                    id={`track-line-${t.user_id}`}
-                                                    type="line"
-                                                    paint={{
-                                                        "line-color": isActive
-                                                            ? "#1a73e8"
-                                                            : "#888",
-                                                        "line-width": isActive
-                                                            ? 6
-                                                            : 3,
-                                                        "line-opacity": 0.8,
-                                                    }}
-                                                />
-                                            </Source>
-
-                                            <Marker
-                                                longitude={lastPos[0]}
-                                                latitude={lastPos[1]}
-                                            >
-                                                <div
-                                                    className={`w-6 h-6 rounded-full flex items-center justify-center border-2 border-white transition-all ${
-                                                        isActive
-                                                            ? "bg-blue-700 scale-125"
-                                                            : "bg-blue-400"
-                                                    }`}
-                                                >
-                                                    <span className="text-white text-sm font-bold">
-                                                        {t.bib_number ?? "?"}
-                                                    </span>
-
-                                                    {isActive && (
-                                                        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap">
-                                                            {t.users.full_name}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </Marker>
-                                        </Fragment>
-                                    )
-                                })}
-                            </Map>
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            />
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            />
+                                        </svg>
+                                        PUBLISHING...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trophy className="w-5 h-5" />
+                                        PUBLISH RESULTS
+                                    </>
+                                )}
+                            </button>
                         </div>
-                    </div>
-
-                    <div className="lg:col-span-5 bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-                        <div className="border-b border-gray-200 px-6 py-4">
-                            <h2 className="text-lg font-medium text-gray-900">
-                                Final Standings
-                            </h2>
-                            <p className="text-sm text-gray-600 mt-1">
-                                Drag rows to adjust positions or use the arrow
-                                buttons
-                            </p>
-                        </div>
-
-                        <div className="overflow-x-auto">
-                            <ResultsTable
-                                results={results || []}
-                                selectedUserId={selectedUserId}
-                                onRowHover={onRowHover}
-                                onRowClick={onRowClick}
-                                onResultsChange={onResultsChange}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-6 flex items-center justify-between">
-                    <p className="text-sm text-gray-600">
-                        Make sure all positions are correct before publishing
-                    </p>
-                    <div className="flex gap-3">
-                        <button
-                            disabled={isPublishing}
-                            className="px-6 py-2.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={confirmResults}
-                            disabled={isPublishing}
-                            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isPublishing ? (
-                                <>
-                                    <svg
-                                        className="animate-spin h-4 w-4 text-white"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <circle
-                                            className="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                        />
-                                        <path
-                                            className="opacity-75"
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                        />
-                                    </svg>
-                                    Publishing...
-                                </>
-                            ) : (
-                                <>Publish Results</>
-                            )}
-                        </button>
                     </div>
                 </div>
             </div>
