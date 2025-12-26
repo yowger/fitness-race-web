@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Calendar, Clock, MapPin, Users } from "lucide-react"
+import { Calendar, Clock, Flag, MapPin, Play, Users } from "lucide-react"
 import { useParams } from "react-router-dom"
 import {
     useAddParticipant,
@@ -9,7 +9,7 @@ import {
 import { format } from "date-fns"
 import DOMPurify from "dompurify"
 import { useRaceEvent } from "../api/useRaceEvents"
-import Map, { Layer, Source } from "@vis.gl/react-maplibre"
+import Map, { Layer, Marker, Source } from "@vis.gl/react-maplibre"
 import { getAvatarUrl } from "../../../lib/avatar"
 import { getBoundsFromCoords } from "../../../lib/geo"
 import { useUser } from "../../auth/hooks/useUser"
@@ -542,59 +542,27 @@ export default function RaceDetailPage() {
                                                         />
                                                     </Source>
 
-                                                    <Source
-                                                        id="start-point"
-                                                        type="geojson"
-                                                        data={{
-                                                            type: "Feature",
-                                                            geometry: {
-                                                                type: "Point",
-                                                                coordinates:
-                                                                    firstCoord,
-                                                            },
-                                                            properties: {},
-                                                        }}
+                                                    <Marker
+                                                        longitude={
+                                                            firstCoord[0]
+                                                        }
+                                                        latitude={firstCoord[1]}
+                                                        anchor="center"
                                                     >
-                                                        <Layer
-                                                            id="start-circle"
-                                                            type="circle"
-                                                            paint={{
-                                                                "circle-radius": 6,
-                                                                "circle-color":
-                                                                    "#22C55E",
-                                                                "circle-stroke-width": 2,
-                                                                "circle-stroke-color":
-                                                                    "#ffffff",
-                                                            }}
-                                                        />
-                                                    </Source>
+                                                        <div className="p-2 bg-green-600 rounded-full shadow-lg text-white">
+                                                            <Play size={18} />
+                                                        </div>
+                                                    </Marker>
 
-                                                    <Source
-                                                        id="end-point"
-                                                        type="geojson"
-                                                        data={{
-                                                            type: "Feature",
-                                                            geometry: {
-                                                                type: "Point",
-                                                                coordinates:
-                                                                    lastCoord,
-                                                            },
-                                                            properties: {},
-                                                        }}
+                                                    <Marker
+                                                        longitude={lastCoord[0]}
+                                                        latitude={lastCoord[1]}
+                                                        anchor="center"
                                                     >
-                                                        <Layer
-                                                            id="end-circle"
-                                                            type="circle"
-                                                            paint={{
-                                                                "circle-radius": 6,
-                                                                "circle-color":
-                                                                    "#EF4444",
-                                                                "circle-stroke-width": 2,
-                                                                "circle-stroke-color":
-                                                                    "#ffffff",
-                                                            }}
-                                                        />
-                                                    </Source>
+                                                        <div className="p-2 bg-red-600 rounded-full shadow-lg text-white">
+                                                            <Flag size={18} />
+                                                        </div>
+                                                    </Marker>
                                                 </Map>
                                             ) : (
                                                 <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50">

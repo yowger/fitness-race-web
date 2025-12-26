@@ -1,0 +1,177 @@
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Antonio:wght@700&family=Work+Sans:wght@400;500;600;700&display=swap");
+
+:root {
+    --electric-cyan: #0891b2;
+    --hot-orange: #ea580c;
+    --lime-green: #16a34a;
+    --deep-purple: #7c3aed;
+}
+
+.font-display {
+    font-family: "Antonio", sans-serif;
+    letter-spacing: -0.02em;
+}
+
+.font-heading {
+    font-family: "Bebas Neue", sans-serif;
+    letter-spacing: 0.02em;
+}
+
+.font-body {
+    font-family: "Work Sans", sans-serif;
+}
+
+.live-pulse {
+    animation: livePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes livePulse {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.05);
+    }
+}
+
+.slide-in-left {
+    animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-in-right {
+    animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInLeft {
+    from {
+        transform: translateX(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.participant-row {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.participant-row:hover {
+    background: rgba(8, 145, 178, 0.05);
+    border-color: rgba(8, 145, 178, 0.3);
+    transform: translateX(4px);
+}
+
+.stat-card {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    border-color: rgb(8, 145, 178);
+    box-shadow: 0 4px 12px rgba(8, 145, 178, 0.15);
+}
+
+.map-pulse {
+    animation: mapPulse 3s ease-in-out infinite;
+}
+
+@keyframes mapPulse {
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(8, 145, 178, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(8, 145, 178, 0.3);
+    }
+}
+
+.distance-progress {
+    background: linear-gradient(
+        90deg,
+        rgb(8, 145, 178) 0%,
+        rgb(22, 163, 74) 50%,
+        rgb(234, 88, 12) 100%
+    );
+    animation: progressShimmer 2s linear infinite;
+    background-size: 200% 100%;
+}
+
+@keyframes progressShimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.filter-button {
+    transition: all 0.3s ease;
+}
+
+.filter-button.active {
+    background: linear-gradient(135deg, rgb(8, 145, 178), rgb(22, 163, 74));
+    color: #fff;
+    font-weight: 600;
+}
+
+.update-indicator {
+    animation: updateBlink 1s ease-in-out;
+}
+
+@keyframes updateBlink {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.grain-overlay {
+    position: relative;
+}
+
+.grain-overlay::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    pointer-events: none;
+}

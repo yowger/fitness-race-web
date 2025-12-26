@@ -2,17 +2,13 @@ import Map, { Layer, Marker, Source } from "@vis.gl/react-maplibre"
 import {
     Users,
     Clock,
-    TrendingUp,
     Zap,
     Activity,
-    Target,
-    StopCircle,
-    Download,
     Play,
     Flag,
-    MapPin,
-    User,
-    Eye,
+    Trophy,
+    AlertCircle,
+    Radio,
 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
@@ -54,7 +50,42 @@ function formatElapsedTime(seconds: number) {
     return `${h}:${m}:${s}`
 }
 
-export default function RacesOngoingPage() {
+import "../styles/racesOngoingPage.css"
+import { formatDate } from "../../../lib/time"
+import { getBoundsFromCoords } from "../../../lib/geo"
+
+type ParticipantStatus = "running" | "finished" | "offline"
+
+function getStatus(
+    userId: string,
+    onlineUsers: Record<string, OnlineUser>
+): ParticipantStatus {
+    const online = onlineUsers[userId]
+
+    if (!online) return "offline" as ParticipantStatus
+    if (online.finished) return "finished" as ParticipantStatus
+
+    return "running" as ParticipantStatus
+}
+
+const getStatusColor = (status: ParticipantStatus | string): string => {
+    switch (status) {
+        case "running":
+            return "text-green-700 border-green-600 bg-green-50"
+        case "finished":
+            return "text-cyan-700 border-cyan-600 bg-cyan-50"
+        case "offline":
+            return "text-orange-700 border-orange-600 bg-orange-50"
+        default:
+            return "text-zinc-600 border-zinc-400 bg-zinc-50"
+    }
+}
+
+export default function AdminRaceTracking() {
+    const [filterStatus, setFilterStatus] = useState<"all" | ParticipantStatus>(
+        "all"
+    )
+
     const [socket, setSocket] = useState<Socket | null>(null)
 
     const { id } = useParams()
@@ -64,7 +95,6 @@ export default function RacesOngoingPage() {
         Record<string, RacerPosition>
     >({})
 
-    const isRacer = liveRace?.participants?.some((p) => p.user.id === user?.id)
     const coords =
         liveRace?.routes?.geojson.features?.[0]?.geometry?.coordinates ?? []
     let flatCoords: [number, number][] = []
@@ -93,41 +123,6 @@ export default function RacesOngoingPage() {
             s.disconnect()
         }
     }, [])
-
-    useEffect(() => {
-        if (!isRacer) return
-        console.log("Setting up geolocation watchPosition")
-        if (!socket || !user || !id) return
-        console.log("Geolocation tracking started for user:", user.id)
-        if (!("geolocation" in navigator)) return
-        console.log("Geolocation is available")
-
-        const watchId = navigator.geolocation.watchPosition(
-            (pos) => {
-                console.log("Emitting participantUpdate:", {
-                    userId: user.id,
-                    raceId: id,
-                    coords: [pos.coords.longitude, pos.coords.latitude],
-                })
-
-                socket.emit("participantUpdate", {
-                    userId: user.id,
-                    raceId: id,
-                    coords: [pos.coords.longitude, pos.coords.latitude],
-                    speed: pos.coords.speed ?? 0,
-                    timestamp: Date.now(),
-                })
-            },
-            (err) => console.error(err),
-            {
-                enableHighAccuracy: true,
-                maximumAge: 1000,
-                timeout: 5000,
-            }
-        )
-
-        return () => navigator.geolocation.clearWatch(watchId)
-    }, [socket, user, id, isRacer])
 
     useEffect(() => {
         if (!liveRace?.actual_start_time) return
@@ -193,36 +188,16 @@ export default function RacesOngoingPage() {
 
             console.log("Race ended:", response)
         } catch (err) {
-            console.log("🚀 ~ handleEndRace ~ err:", err)
             console.error("End race error", err)
         }
     }
 
-    const getInitials = (name: string) =>
-        name
-            ?.split(" ")
-            .map((n) => n[0])
-            .join("")
-            .toUpperCase()
-
-    const getPositionColor = (position: number) => {
-        if (position === 1) return "from-yellow-400 to-yellow-600"
-        if (position === 2) return "from-gray-300 to-gray-500"
-        if (position === 3) return "from-orange-400 to-orange-600"
-        return "from-blue-500 to-blue-600"
-    }
-
-    const getPositionBadge = (position: number) => {
-        if (position === 1) return "🥇"
-        if (position === 2) return "🥈"
-        if (position === 3) return "🥉"
-        return `#${position}`
-    }
-
-    const [onlineMap, setOnlineMap] = useState<Record<string, boolean>>({})
-    const [onlineAdmins, setOnlineAdmins] = useState<string[]>([])
+    const [onlineUsers, setOnlineUsers] = useState<Record<string, OnlineUser>>(
+        {}
+    )
+    // const [onlineAdmins, setOnlineAdmins] = useState<string[]>([])
     const [onlineRacers, setOnlineRacers] = useState<string[]>([])
-    const [onlineGuests, setOnlineGuests] = useState<string[]>([])
+    // const [onlineGuests, setOnlineGuests] = useState<string[]>([])
 
     useEffect(() => {
         if (!id || !user || !socket) return
@@ -230,7 +205,7 @@ export default function RacesOngoingPage() {
         socket.emit("joinRace", { raceId: id, userId: user.id })
 
         socket.on("onlineParticipants", (participants: OnlineUser[]) => {
-            const map: Record<string, boolean> = {}
+            const users: Record<string, OnlineUser> = {}
             const admins: string[] = []
             const racers: string[] = []
             const guests: string[] = []
@@ -244,17 +219,17 @@ export default function RacesOngoingPage() {
             )
 
             unique.forEach((p) => {
-                map[p.userId] = true
+                users[p.userId] = p
 
                 if (p.role === "admin") admins.push(p.userId)
                 else if (p.role === "racer") racers.push(p.userId)
                 else if (p.role === "guest") guests.push(p.userId)
             })
 
-            setOnlineMap(map)
-            setOnlineAdmins(admins)
+            setOnlineUsers(users)
+            // setOnlineAdmins(admins)
             setOnlineRacers(racers)
-            setOnlineGuests(guests)
+            // setOnlineGuests(guests)
         })
 
         socket.on(
@@ -295,751 +270,615 @@ export default function RacesOngoingPage() {
     const liveLeaderboard = (liveRace?.participants || [])
         .map((p) => {
             const update = racerPositions[p.user.id]
+            const status = getStatus(p.user.id, onlineUsers)
+
             return {
                 id: p.id,
                 name: p.user.full_name,
                 bib: p.bib_number,
-                distanceCovered: update?.distance ?? 0,
-                position: 0,
+                distance: update?.distance ?? 0,
                 pace: update?.speed
                     ? `${(60 / update.speed).toFixed(2)} min/km`
                     : "–",
-                avatar: p.user.avatar_url,
+                lastUpdate: update?.lastUpdate,
+                status,
+                position: 0,
             }
         })
-        .sort((a, b) => (b.distanceCovered || 0) - (a.distanceCovered || 0))
+        .sort((a, b) => b.distance - a.distance)
         .map((p, index) => ({ ...p, position: index + 1 }))
 
+    const stats = {
+        total: liveLeaderboard.length,
+        running: liveLeaderboard.filter((p) => p.status === "running").length,
+        finished: liveLeaderboard.filter((p) => p.status === "finished").length,
+        offline: liveLeaderboard.filter((p) => p.status === "offline").length,
+    }
+
+    const filteredParticipants =
+        filterStatus === "all"
+            ? liveLeaderboard
+            : liveLeaderboard.filter((p) => p.status === filterStatus)
+
+    function getMarkerColor(userId: string) {
+        const user = onlineUsers[userId]
+        const update = racerPositions[userId]
+
+        if (!user || !update) return "bg-gray-400"
+
+        const status = getStatus(userId, onlineUsers)
+
+        switch (status) {
+            case "running":
+                return "bg-green-500"
+            case "finished":
+                return "bg-blue-500"
+            case "offline":
+                return "bg-gray-400"
+            default:
+                return "bg-yellow-500"
+        }
+    }
+
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="bg-linear-to-br from-blue-600 via-indigo-600 to-purple-700 text-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-                        <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                                {liveRace?.status === "ongoing" && (
-                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500 rounded-full animate-pulse">
-                                        <div className="w-2 h-2 bg-white rounded-full"></div>
-                                        <span className="text-xs font-bold uppercase">
-                                            Live
+        <div className="min-h-screen bg-gray-50 text-zinc-900 font-body">
+            <div className="border-b border-gray-200 bg-white shadow-sm sticky top-0 z-50">
+                <div className="max-w-[1800px] mx-auto px-6 py-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                            <div>
+                                <h1 className="font-display text-4xl text-zinc-900 flex items-center gap-3">
+                                    {liveRace?.name}
+                                    {liveRace?.status === "ongoing" && (
+                                        <span className="live-pulse flex items-center gap-2 px-4 py-1 bg-red-50 border-2 border-red-500 text-red-600 font-heading text-base rounded-full">
+                                            <Radio className="w-4 h-4" />
+                                            LIVE
                                         </span>
-                                    </div>
-                                )}
-
-                                <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-xs font-bold uppercase">
-                                    {liveRace?.status}
-                                </span>
-
-                                {onlineGuests.length +
-                                    onlineAdmins.length +
-                                    onlineRacers.length && (
-                                    <div className="flex items-center gap-1 px-3 py-1.5 bg-blue-500/80 rounded-full text-xs font-bold text-white">
-                                        <Eye size={12} />{" "}
-                                        {onlineGuests.length +
-                                            onlineAdmins.length +
-                                            onlineRacers.length}{" "}
-                                        <span>watching</span>
-                                    </div>
-                                )}
-                            </div>
-                            <h1 className="text-4xl font-bold mb-4">
-                                {liveRace?.name}
-                            </h1>
-
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                                        <Clock className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-blue-100 font-medium">
-                                            Elapsed Time
-                                        </p>
-                                        <p className="text-lg font-bold">
-                                            {elapsedTime}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                                        <TrendingUp className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-blue-100 font-medium">
-                                            Total Distance
-                                        </p>
-                                        <p className="text-lg font-bold">
-                                            {liveRace?.routes?.distance?.toFixed(
-                                                2
-                                            )}{" "}
-                                            km
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                                        <Users className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-blue-100 font-medium">
-                                            Total Participants
-                                        </p>
-                                        <p className="text-lg font-bold">
-                                            {liveRace?.participants?.length ||
-                                                0}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                                        <Activity className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-blue-100 font-medium">
-                                            Active Racers
-                                        </p>
-                                        <p className="text-lg font-bold">
-                                            {onlineRacers.length}
-                                        </p>
-                                    </div>
+                                    )}
+                                </h1>
+                                <div className="flex items-center gap-4 text-zinc-600 mt-1">
+                                    <span>
+                                        {liveRace?.routes?.distance?.toPrecision(
+                                            2
+                                        )}{" "}
+                                        km
+                                    </span>
+                                    <span>•</span>
+                                    <span>
+                                        {formatDate(liveRace?.start_time)}
+                                    </span>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-2">
+                                        <Clock className="w-4 h-4" />
+                                        {elapsedTime}
+                                    </span>
                                 </div>
                             </div>
                         </div>
 
                         {isHost && (
-                            <div className="flex flex-col gap-3 lg:items-end">
-                                <div className="flex gap-2">
-                                    {liveRace?.status === "upcoming" && (
-                                        <button
-                                            onClick={handleStartRace}
-                                            className="px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 shadow-lg"
-                                        >
-                                            <Play size={16} />
-                                            Start Race
-                                        </button>
-                                    )}
+                            <div className="flex items-center gap-4">
+                                {/* <button className="cursor-pointer px-6 py-3 bg-gray-100 hover:bg-gray-200 text-zinc-900 font-heading text-lg rounded-lg transition-colors">
+                                EXPORT DATA
+                            </button> */}
 
-                                    {liveRace?.status === "ongoing" && (
-                                        <button
-                                            onClick={handleEndRace}
-                                            className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 shadow-lg"
-                                        >
-                                            <StopCircle size={16} />
-                                            End Race
-                                        </button>
-                                    )}
+                                {liveRace?.status === "upcoming" && (
+                                    <button
+                                        onClick={handleStartRace}
+                                        className="cursor-pointer px-6 py-3 bg-linear-to-r from-cyan-500 to-blue-500 text-white font-heading text-lg rounded-lg hover:shadow-xl hover:shadow-cyan-500/30 transition-shadow"
+                                    >
+                                        START RACE
+                                    </button>
+                                )}
 
-                                    {liveRace?.status === "finished" && (
-                                        <Link
-                                            to={`/dashboard/races/${liveRace?.id}/results`}
-                                        >
-                                            <button className="px-4 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 border border-white/30">
-                                                <Download size={16} />
-                                                {/* Export Data */}
-                                                Edit Results
-                                            </button>
-                                        </Link>
-                                    )}
-                                </div>
+                                {liveRace?.status === "ongoing" && (
+                                    <button
+                                        onClick={handleEndRace}
+                                        className="cursor-pointer px-6 py-3 bg-linear-to-r from-green-500 to-teal-500 text-white font-heading text-lg rounded-lg hover:shadow-xl hover:shadow-green-500/30 transition-shadow"
+                                    >
+                                        END RACE
+                                    </button>
+                                )}
+
+                                {liveRace?.status === "finished" && (
+                                    <Link
+                                        to={`/dashboard/races/${liveRace?.id}/results`}
+                                    >
+                                        <button className="cursor-pointer px-6 py-3 bg-linear-to-r from-gray-400 to-gray-600 text-white font-heading text-lg rounded-lg hover:shadow-xl hover:shadow-gray-500/30 transition-shadow">
+                                            EDIT RESULTS
+                                        </button>
+                                    </Link>
+                                )}
                             </div>
                         )}
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <div className="p-4 border-b border-gray-200 bg-linear-to-r from-gray-50 to-white">
-                                <div className="flex items-center justify-between">
-                                    <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                        Live Race Map
+            <div className="max-w-[1800px] mx-auto px-6 py-8">
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                    <div className="xl:col-span-1 space-y-6">
+                        <div className="grid grid-cols-2 gap-4 slide-in-left">
+                            <div className="stat-card p-6 bg-white border-2 border-gray-200 rounded-lg shadow-sm">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <Users className="w-5 h-5 text-cyan-600" />
+                                    <span className="font-body text-sm text-zinc-600 uppercase tracking-wider">
+                                        Total
+                                    </span>
+                                </div>
+                                <div className="font-display text-4xl text-zinc-900">
+                                    {liveRace?.participants?.length || 0}
+                                </div>
+                            </div>
+
+                            <div className="stat-card p-6 bg-white border-2 border-green-200 rounded-lg shadow-sm">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <Activity className="w-5 h-5 text-green-600" />
+                                    <span className="font-body text-sm text-zinc-600 uppercase tracking-wider">
+                                        Running
+                                    </span>
+                                </div>
+                                <div className="font-display text-4xl text-green-600">
+                                    {onlineRacers.length}
+                                </div>
+                            </div>
+
+                            <div className="stat-card p-6 bg-white border-2 border-cyan-200 rounded-lg shadow-sm">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <Trophy className="w-5 h-5 text-cyan-600" />
+                                    <span className="font-body text-sm text-zinc-600 uppercase tracking-wider">
+                                        Finished
+                                    </span>
+                                </div>
+                                <div className="font-display text-4xl text-cyan-600">
+                                    {stats.finished}
+                                </div>
+                            </div>
+
+                            <div className="stat-card p-6 bg-white border-2 border-orange-200 rounded-lg shadow-sm">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <AlertCircle className="w-5 h-5 text-orange-600" />
+                                    <span className="font-body text-sm text-zinc-600 uppercase tracking-wider">
+                                        Offline
+                                    </span>
+                                </div>
+                                <div className="font-display text-4xl text-orange-600">
+                                    {liveRace?.participants?.length ||
+                                        0 - onlineRacers.length}
+                                </div>
+                            </div>
+                        </div>
+
+                        {isHost && (
+                            <div className="slide-in-left grain-overlay p-6 bg-white border-2 border-gray-200 rounded-lg shadow-sm">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="font-heading text-2xl text-zinc-900">
+                                        LIVE RACE MAP
                                     </h2>
-                                    <button className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors">
-                                        Full Screen
+                                    {liveRace?.status === "ongoing" && (
+                                        <div className="flex items-center gap-2 text-green-600">
+                                            <Zap className="w-4 h-4" />
+                                            <span className="font-body text-sm">
+                                                Tracking Active
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="relative rounded-lg overflow-hidden map-pulse border-2 border-cyan-200">
+                                    <div className="relative h-[400px] bg-gray-100">
+                                        <Map
+                                            mapStyle="https://api.maptiler.com/maps/streets-v4/style.json?key=l60bj9KIXXKDXbsOvzuz"
+                                            onLoad={(e) => {
+                                                if (flatCoords.length > 1) {
+                                                    const bounds =
+                                                        getBoundsFromCoords(
+                                                            flatCoords
+                                                        )
+                                                    e.target.fitBounds(bounds, {
+                                                        padding: 60,
+                                                        duration: 800,
+                                                    })
+                                                }
+                                            }}
+                                            attributionControl={false}
+                                        >
+                                            <Source
+                                                id="route"
+                                                type="geojson"
+                                                data={{
+                                                    type: "Feature",
+                                                    geometry: {
+                                                        type: "LineString",
+                                                        coordinates: coords,
+                                                    },
+                                                    properties: {},
+                                                }}
+                                            >
+                                                <Layer
+                                                    id="race-line-outline"
+                                                    type="line"
+                                                    paint={{
+                                                        "line-color": "#ffffff",
+                                                        "line-width": 10,
+                                                        "line-opacity": 1,
+                                                    }}
+                                                />
+
+                                                <Layer
+                                                    id="race-line"
+                                                    type="line"
+                                                    paint={{
+                                                        "line-color": "#F97316",
+                                                        "line-width": 5,
+                                                        "line-opacity": 0.95,
+                                                    }}
+                                                />
+                                            </Source>
+
+                                            <Marker
+                                                longitude={firstCoord[0]}
+                                                latitude={firstCoord[1]}
+                                                anchor="center"
+                                            >
+                                                <div className="p-2 bg-green-600 rounded-full shadow-lg text-white">
+                                                    <Play size={18} />
+                                                </div>
+                                            </Marker>
+
+                                            <Marker
+                                                longitude={lastCoord[0]}
+                                                latitude={lastCoord[1]}
+                                                anchor="center"
+                                            >
+                                                <div className="p-2 bg-red-600 rounded-full shadow-lg text-white">
+                                                    <Flag size={18} />
+                                                </div>
+                                            </Marker>
+
+                                            {Object.entries(racerPositions).map(
+                                                ([userId, data]) => (
+                                                    <Marker
+                                                        key={userId}
+                                                        longitude={
+                                                            data.coords[0]
+                                                        }
+                                                        latitude={
+                                                            data.coords[1]
+                                                        }
+                                                        anchor="center"
+                                                    >
+                                                        <div
+                                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg ${getMarkerColor(
+                                                                userId
+                                                            )}`}
+                                                        >
+                                                            {userId.slice(-2)}
+                                                        </div>
+                                                    </Marker>
+                                                )
+                                            )}
+                                        </Map>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                                        <span className="text-zinc-600">
+                                            Running
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 bg-cyan-600 rounded-full"></div>
+                                        <span className="text-zinc-600">
+                                            Finished
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 bg-orange-600 rounded-full"></div>
+                                        <span className="text-zinc-600">
+                                            offline
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="xl:col-span-2 slide-in-right">
+                        <div className="bg-white border-2 border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                            <div className="p-6 border-b border-gray-200">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="font-heading text-2xl text-zinc-900">
+                                        PARTICIPANTS TRACKING
+                                    </h2>
+                                    <div className="flex items-center gap-2 text-sm text-zinc-600">
+                                        <Activity className="w-4 h-4 text-green-600 animate-pulse" />
+                                        <span>Live Updates</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setFilterStatus("all")}
+                                        className={`filter-button px-6 py-2 rounded-lg font-body ${
+                                            filterStatus === "all"
+                                                ? "active"
+                                                : "bg-gray-100 hover:bg-gray-200 text-zinc-900"
+                                        }`}
+                                    >
+                                        All ({stats.total})
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            setFilterStatus("running")
+                                        }
+                                        className={`filter-button px-6 py-2 rounded-lg font-body ${
+                                            filterStatus === "running"
+                                                ? "active"
+                                                : "bg-gray-100 hover:bg-gray-200 text-zinc-900"
+                                        }`}
+                                    >
+                                        Running ({stats.running})
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            setFilterStatus("finished")
+                                        }
+                                        className={`filter-button px-6 py-2 rounded-lg font-body ${
+                                            filterStatus === "finished"
+                                                ? "active"
+                                                : "bg-gray-100 hover:bg-gray-200 text-zinc-900"
+                                        }`}
+                                    >
+                                        Finished ({stats.finished})
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            setFilterStatus("offline")
+                                        }
+                                        className={`filter-button px-6 py-2 rounded-lg font-body ${
+                                            filterStatus === "offline"
+                                                ? "active"
+                                                : "bg-gray-100 hover:bg-gray-200 text-zinc-900"
+                                        }`}
+                                    >
+                                        offline ({stats.offline})
                                     </button>
                                 </div>
                             </div>
-                            <div className="relative h-[400px] bg-gray-100">
-                                <Map
-                                    mapStyle="https://api.maptiler.com/maps/streets-v4/style.json?key=l60bj9KIXXKDXbsOvzuz"
-                                    initialViewState={{
-                                        longitude: 125.6128,
-                                        latitude: 7.0731,
-                                        zoom: 14,
-                                    }}
-                                    attributionControl={false}
-                                >
-                                    <Source
-                                        id="route"
-                                        type="geojson"
-                                        data={{
-                                            type: "Feature",
-                                            geometry: {
-                                                type: "LineString",
-                                                coordinates: coords,
-                                            },
-                                            properties: {},
-                                        }}
-                                    >
-                                        <Layer
-                                            id="route-line"
-                                            type="line"
-                                            paint={{
-                                                "line-color": "#3b82f6",
-                                                "line-width": 4,
-                                            }}
-                                        />
-                                    </Source>
 
-                                    <Marker
-                                        longitude={firstCoord[0]}
-                                        latitude={firstCoord[1]}
-                                        anchor="center"
-                                    >
-                                        <div className="p-2 bg-green-600 rounded-full shadow-lg text-white">
-                                            <Play size={18} />
-                                        </div>
-                                    </Marker>
-
-                                    <Marker
-                                        longitude={lastCoord[0]}
-                                        latitude={lastCoord[1]}
-                                        anchor="center"
-                                    >
-                                        <div className="p-2 bg-red-600 rounded-full shadow-lg text-white">
-                                            <Flag size={18} />
-                                        </div>
-                                    </Marker>
-
-                                    {Object.entries(racerPositions).map(
-                                        ([userId, data]) => {
-                                            const isOnline =
-                                                !!onlineMap[userId] &&
-                                                Date.now() - data.lastUpdate <
-                                                    10_000
-
-                                            return (
-                                                <Marker
-                                                    key={userId}
-                                                    longitude={data.coords[0]}
-                                                    latitude={data.coords[1]}
-                                                    anchor="center"
+                            {/* Participants Table */}
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead className="bg-gray-50">
+                                        <tr className="border-b border-gray-200">
+                                            <th className="px-6 py-4 text-left font-heading text-sm text-zinc-600">
+                                                POS
+                                            </th>
+                                            <th className="px-6 py-4 text-left font-heading text-sm text-zinc-600">
+                                                BIB
+                                            </th>
+                                            <th className="px-6 py-4 text-left font-heading text-sm text-zinc-600">
+                                                PARTICIPANT
+                                            </th>
+                                            <th className="px-6 py-4 text-left font-heading text-sm text-zinc-600">
+                                                STATUS
+                                            </th>
+                                            <th className="px-6 py-4 text-left font-heading text-sm text-zinc-600">
+                                                DISTANCE
+                                            </th>
+                                            <th className="px-6 py-4 text-left font-heading text-sm text-zinc-600">
+                                                PACE
+                                            </th>
+                                            <th className="px-6 py-4 text-left font-heading text-sm text-zinc-600">
+                                                LAST UPDATE
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredParticipants.map(
+                                            (participant, index) => (
+                                                <tr
+                                                    key={participant.id}
+                                                    className="participant-row border-b border-gray-200 cursor-pointer"
+                                                    style={{
+                                                        animationDelay: `${
+                                                            index * 0.05
+                                                        }s`,
+                                                    }}
                                                 >
-                                                    <div
-                                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg ${
-                                                            isOnline
-                                                                ? "bg-green-500"
-                                                                : "bg-gray-400"
-                                                        }`}
-                                                    >
-                                                        {userId.slice(-2)}
-                                                    </div>
-                                                </Marker>
-                                            )
-                                        }
-                                    )}
-                                </Map>
-
-                                {/* <div className="absolute top-4 right-4 px-3 py-2 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg">
-                                    <p className="text-xs text-gray-500 font-medium">
-                                        Real-time tracking
-                                    </p>
-                                    <p className="text-sm font-bold text-gray-900">
-                                        Updates every 5s
-                                    </p>
-                                </div> */}
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <div className="p-4 border-b border-gray-200 bg-linear-to-r from-gray-50 to-white">
-                                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                    Live Leaderboard
-                                </h2>
-                            </div>
-                            <div className="divide-y divide-gray-100">
-                                {liveLeaderboard.map((participant, index) => (
-                                    <div
-                                        key={participant.id}
-                                        className={`p-4 hover:bg-gray-50 transition-colors ${
-                                            index < 3
-                                                ? "bg-linear-to-r from-yellow-50/30 to-transparent"
-                                                : ""
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div
-                                                className={`w-12 h-12 rounded-lg bg-linear-to-b ${getPositionColor(
-                                                    participant.position
-                                                )} flex items-center justify-center text-white font-bold shadow-lg shrink-0`}
-                                            >
-                                                {participant.position <= 3 ? (
-                                                    <span className="text-xl">
-                                                        {getPositionBadge(
-                                                            participant.position
-                                                        )}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-sm">
-                                                        #{participant.position}
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                                                {participant.avatar ? (
-                                                    <img
-                                                        src={participant.avatar}
-                                                        alt={participant.name}
-                                                        className="w-full h-full rounded-full object-cover"
-                                                    />
-                                                ) : (
-                                                    getInitials(
-                                                        participant.name || ""
-                                                    )
-                                                )}
-                                            </div>
-
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <p className="text-sm font-bold text-gray-900 truncate">
-                                                        {participant.name}
-                                                    </p>
-                                                    <span className="px-2 py-0.5 bg-gray-100 rounded text-xs font-semibold text-gray-600">
-                                                        #{participant.bib}
-                                                    </span>
-                                                </div>
-
-                                                <div className="mb-2">
-                                                    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                                                    <td className="px-6 py-5">
+                                                        <div className="font-display text-2xl text-zinc-900">
+                                                            {
+                                                                participant.position
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        <div className="font-heading text-lg text-cyan-600">
+                                                            #{participant.bib}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        <div className="font-body text-zinc-900 font-medium">
+                                                            {participant.name}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        <span
+                                                            className={`inline-flex items-center gap-2 px-3 py-1 border-2 rounded-full font-body text-xs uppercase ${getStatusColor(
+                                                                participant.status
+                                                            )}`}
+                                                        >
+                                                            <span className="w-2 h-2 rounded-full bg-current live-pulse"></span>
+                                                            {participant.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        <div className="space-y-2">
+                                                            <div className="font-body text-zinc-900 font-semibold">
+                                                                {participant.distance.toFixed(
+                                                                    1
+                                                                )}{" "}
+                                                                km
+                                                            </div>
+                                                            <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="distance-progress h-full rounded-full"
+                                                                    style={{
+                                                                        width: `${
+                                                                            (participant.distance /
+                                                                                5.0) *
+                                                                            100
+                                                                        }%`,
+                                                                    }}
+                                                                ></div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        <div className="font-body text-zinc-700">
+                                                            {participant.pace}{" "}
+                                                            <span className="text-zinc-500 text-sm">
+                                                                /km
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-5">
                                                         <div
-                                                            className="bg-linear-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500"
-                                                            style={{
-                                                                width: `${
-                                                                    (participant.distanceCovered /
-                                                                        (liveRace
-                                                                            ?.routes
-                                                                            ?.distance ??
-                                                                            1)) *
-                                                                    100
-                                                                }%`,
-                                                            }}
-                                                        ></div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center gap-4 text-xs">
-                                                    <div className="flex items-center gap-1 text-gray-600">
-                                                        <Target
-                                                            size={12}
-                                                            className="text-blue-600"
-                                                        />
-                                                        <span className="font-semibold">
-                                                            {participant.distanceCovered.toFixed(
-                                                                1
-                                                            )}{" "}
-                                                            /{" "}
-                                                            {liveRace?.routes?.distance?.toFixed(
-                                                                1
-                                                            )}{" "}
-                                                            km
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 text-gray-600">
-                                                        <Zap
-                                                            size={12}
-                                                            className="text-orange-500"
-                                                        />
-                                                        <span className="font-semibold">
-                                                            {participant.pace}
-                                                        </span>
-                                                    </div>
-                                                    <div className="text-gray-500">
-                                                        {(
-                                                            (participant.distanceCovered /
-                                                                (liveRace
-                                                                    ?.routes
-                                                                    ?.distance ??
-                                                                    1)) *
-                                                            100
-                                                        ).toFixed(0)}
-                                                        % complete
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                                                            className={
+                                                                `font-body text-sm`
+                                                                // className={`font-body text-sm ${
+                                                                //     participant.lastUpdate ===
+                                                                //     "Just now"
+                                                                //         ? "text-green-600 update-indicator"
+                                                                //         : "text-zinc-500"
+                                                            }
+                                                        >
+                                                            {
+                                                                participant.lastUpdate
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-6">
-                        <div className="bg-linear-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4">
-                                Race Information
-                            </h3>
-                            <div className="space-y-3 text-sm">
-                                <div className="flex items-start gap-2">
-                                    <TrendingUp
-                                        size={16}
-                                        className="text-blue-600 mt-0.5 shrink-0"
-                                    />
-                                    <div>
-                                        <p className="font-medium text-gray-900">
-                                            Distance
-                                        </p>
-                                        <p className="text-gray-600">
-                                            {liveRace?.routes?.distance?.toFixed(
-                                                2
-                                            ) + " km" || "Not specified"}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <MapPin
-                                        size={16}
-                                        className="text-blue-600 mt-0.5 shrink-0"
-                                    />
-                                    <div>
-                                        <p className="font-medium text-gray-900">
-                                            Start Location
-                                        </p>
-                                        <p className="text-gray-600">
-                                            {liveRace?.routes?.start_address ||
-                                                "Not specified"}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <MapPin
-                                        size={16}
-                                        className="text-blue-600 mt-0.5 shrink-0"
-                                    />
-                                    <div>
-                                        <p className="font-medium text-gray-900">
-                                            end Location
-                                        </p>
-                                        <p className="text-gray-600">
-                                            {liveRace?.routes?.end_address ||
-                                                "Not specified"}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <User
-                                        size={16}
-                                        className="text-blue-600 mt-0.5 shrink-0"
-                                    />
-                                    <div>
-                                        <p className="font-medium text-gray-900">
-                                            Host
-                                        </p>
-                                        <p className="text-gray-600">
-                                            {
-                                                liveRace?.created_by_user
-                                                    .full_name
-                                            }
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <div className="p-4 border-b bg-gray-50">
-                                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                    Participants
-                                    <div className="flex items-center gap-4 ml-auto">
-                                        <span className="text-sm font-normal text-gray-600 inline-flex items-center gap-1">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                            {onlineRacers.length +
-                                                onlineAdmins.length}{" "}
-                                            online
-                                        </span>
-
-                                        <span className="text-sm font-normal text-gray-600">
-                                            {liveRace?.participants?.length}{" "}
-                                            total
-                                        </span>
-                                    </div>
-                                </h2>
-                            </div>
-
-                            <ul className="divide-y divide-gray-100">
-                                {liveRace?.participants?.map((p) => {
-                                    const isOnline = !!onlineMap[p.user.id]
-
-                                    return (
-                                        <li
-                                            key={p.id}
-                                            className="p-4 flex items-center gap-4"
-                                        >
-                                            <div className="relative w-10 h-10">
-                                                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg">
-                                                    {p.bib_number}
-                                                </div>
-
-                                                <span
-                                                    className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
-                                                        isOnline
-                                                            ? "bg-green-500"
-                                                            : "bg-gray-400"
-                                                    }`}
-                                                ></span>
-                                            </div>
-
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-semibold text-gray-900 truncate">
-                                                    {p.user.full_name}
-                                                </p>
-                                            </div>
-                                        </li>
-                                    )
-                                })}
-                            </ul>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* modal */}
         </div>
     )
 }
 
-//
-/* 
-<div className="space-y-6">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                <Activity className="w-5 h-5 text-blue-600" />
-                                Race Statistics
-                            </h3>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                                    <div>
-                                        <p className="text-xs text-gray-500 font-medium mb-1">
-                                            Average Pace
-                                        </p>
-                                        <p className="text-lg font-bold text-gray-900">
-                                            4:36/km
-                                        </p>
-                                    </div>
-                                    <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
-                                        <Zap className="w-6 h-6 text-blue-600" />
-                                    </div>
-                                </div>
+/*
+<div className="slide-in-left p-6 bg-white border-2 border-gray-200 rounded-lg shadow-sm">
+    <h3 className="font-heading text-xl text-zinc-900 mb-4">
+        QUICK ACTIONS
+    </h3>
+    <div className="space-y-3">
+        <button className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 text-left font-body rounded-lg transition-colors flex items-center justify-between border border-gray-200">
+            <span className="text-zinc-900">
+                Send Broadcast Alert
+            </span>
+            <AlertCircle className="w-4 h-4 text-orange-600" />
+        </button>
+        <button className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 text-left font-body rounded-lg transition-colors flex items-center justify-between border border-gray-200">
+            <span className="text-zinc-900">
+                View Race Analytics
+            </span>
+            <Activity className="w-4 h-4 text-cyan-600" />
+        </button>
+        <button className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 text-left font-body rounded-lg transition-colors flex items-center justify-between border border-gray-200">
+            <span className="text-zinc-900">
+                Emergency Services
+            </span>
+            <Radio className="w-4 h-4 text-red-600" />
+        </button>
+    </div>
+</div>
 
-                                <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                                    <div>
-                                        <p className="text-xs text-gray-500 font-medium mb-1">
-                                            Completion Rate
-                                        </p>
-                                        <p className="text-lg font-bold text-gray-900">
-                                            72%
-                                        </p>
-                                    </div>
-                                    <div className="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center">
-                                        <Target className="w-6 h-6 text-green-600" />
-                                    </div>
-                                </div>
+*/
 
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs text-gray-500 font-medium mb-1">
-                                            Fastest Runner
-                                        </p>
-                                        <p className="text-sm font-bold text-gray-900">
-                                            Alice Johnson
-                                        </p>
-                                        <p className="text-xs text-gray-500">
-                                            4:15/km pace
-                                        </p>
-                                    </div>
-                                    <div className="w-12 h-12 rounded-lg bg-yellow-50 flex items-center justify-center">
-                                        <Trophy className="w-6 h-6 text-yellow-600" />
-                                    </div>
+/*
+{/* Participant Detail Modal
+            {selectedParticipant && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+                    onClick={() => setSelectedParticipant(null)}
+                >
+                    <div
+                        className="bg-white border-2 border-cyan-200 rounded-lg p-8 max-w-2xl w-full shadow-2xl fade-in"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-start justify-between mb-6">
+                            <div>
+                                <div className="font-heading text-sm text-cyan-600 mb-1">
+                                    BIB #{selectedParticipant.bib}
+                                </div>
+                                <h3 className="font-display text-4xl text-zinc-900 mb-2">
+                                    {selectedParticipant.name}
+                                </h3>
+                                <span
+                                    className={`inline-flex items-center gap-2 px-4 py-2 border-2 rounded-full font-body text-sm uppercase ${getStatusColor(
+                                        selectedParticipant.status
+                                    )}`}
+                                >
+                                    <span className="w-2 h-2 rounded-full bg-current live-pulse"></span>
+                                    {selectedParticipant.status}
+                                </span>
+                            </div>
+                            <button
+                                onClick={() => setSelectedParticipant(null)}
+                                className="text-zinc-400 hover:text-zinc-900 text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4 mb-6">
+                            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                <div className="font-body text-sm text-zinc-600 mb-1">
+                                    Position
+                                </div>
+                                <div className="font-display text-3xl text-zinc-900">
+                                    #{selectedParticipant.position}
                                 </div>
                             </div>
+                            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                <div className="font-body text-sm text-zinc-600 mb-1">
+                                    Distance
+                                </div>
+                                <div className="font-display text-3xl text-cyan-600">
+                                    {selectedParticipant.distance} km
+                                </div>
+                            </div>
+                            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                <div className="font-body text-sm text-zinc-600 mb-1">
+                                    Pace
+                                </div>
+                                <div className="font-display text-3xl text-green-600">
+                                    {selectedParticipant.pace}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button className="flex-1 py-3 bg-cyan-50 border-2 border-cyan-600 text-cyan-700 font-heading text-lg rounded-lg hover:bg-cyan-100 transition-colors">
+                                VIEW ON MAP
+                            </button>
+                            <button className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-zinc-900 font-heading text-lg rounded-lg transition-colors border border-gray-300">
+                                SEND MESSAGE
+                            </button>
                         </div>
                     </div>
-
-
-<div className="bg-linear-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4">
-                                Race Information
-                            </h3>
-                            <div className="space-y-3 text-sm">
-                                <div className="flex items-start gap-2">
-                                    <MapPin
-                                        size={16}
-                                        className="text-blue-600 mt-0.5 shrink-0"
-                                    />
-                                    <div>
-                                        <p className="font-medium text-gray-900">
-                                            Location
-                                        </p>
-                                        <p className="text-gray-600">
-                                            City Park, Downtown
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <Clock
-                                        size={16}
-                                        className="text-blue-600 mt-0.5 shrink-0"
-                                    />
-                                    <div>
-                                        <p className="font-medium text-gray-900">
-                                            Started At
-                                        </p>
-                                        <p className="text-gray-600">
-                                            8:00 AM Today
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <TrendingUp
-                                        size={16}
-                                        className="text-blue-600 mt-0.5 shrink-0"
-                                    />
-                                    <div>
-                                        <p className="font-medium text-gray-900">
-                                            Route Type
-                                        </p>
-                                        <p className="text-gray-600">
-                                            City Loop Circuit
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div> 
-                        
-                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                <Trophy className="w-5 h-5 text-yellow-500" />
-                                Top 3 Runners
-                            </h3>
-                            <div className="space-y-3">
-                                {race.participants
-                                    .slice(0, 3)
-                                    .map((participant) => (
-                                        <div
-                                            key={participant.id}
-                                            className="flex items-center gap-3 p-3 rounded-lg bg-linear-to-br from-gray-50 to-white border border-gray-100"
-                                        >
-                                            <div
-                                                className={`w-10 h-10 rounded-lg bg-linear-to-br ${getPositionColor(
-                                                    participant.position
-                                                )} flex items-center justify-center text-white font-bold shadow-md`}
-                                            >
-                                                <span className="text-lg">
-                                                    {getPositionBadge(
-                                                        participant.position
-                                                    )}
-                                                </span>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-bold text-gray-900 truncate">
-                                                    {participant.name}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    {participant.distanceCovered.toFixed(
-                                                        1
-                                                    )}{" "}
-                                                    km • {participant.pace}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                <Activity className="w-5 h-5 text-blue-600" />
-                                Race Statistics
-                            </h3>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                                    <div>
-                                        <p className="text-xs text-gray-500 font-medium mb-1">
-                                            Average Pace
-                                        </p>
-                                        <p className="text-lg font-bold text-gray-900">
-                                            4:36/km
-                                        </p>
-                                    </div>
-                                    <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
-                                        <Zap className="w-6 h-6 text-blue-600" />
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                                    <div>
-                                        <p className="text-xs text-gray-500 font-medium mb-1">
-                                            Completion Rate
-                                        </p>
-                                        <p className="text-lg font-bold text-gray-900">
-                                            72%
-                                        </p>
-                                    </div>
-                                    <div className="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center">
-                                        <Target className="w-6 h-6 text-green-600" />
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs text-gray-500 font-medium mb-1">
-                                            Fastest Runner
-                                        </p>
-                                        <p className="text-sm font-bold text-gray-900">
-                                            Alice Johnson
-                                        </p>
-                                        <p className="text-xs text-gray-500">
-                                            4:15/km pace
-                                        </p>
-                                    </div>
-                                    <div className="w-12 h-12 rounded-lg bg-yellow-50 flex items-center justify-center">
-                                        <Trophy className="w-6 h-6 text-yellow-600" /> 
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        // routes
-
-                         {/* <div className="flex items-start gap-2">
-                                    <Clock
-                                        size={16}
-                                        className="text-blue-600 mt-0.5 shrink-0"
-                                    />
-                                    <div>
-                                        <p className="font-medium text-gray-900">
-                                            Started At
-                                        </p>
-                                        <p className="text-gray-600">
-                                            8:00 AM Today
-                                        </p>
-                                    </div>
-                                </div> 
-                               <div className="flex items-start gap-2">
-                                    <TrendingUp
-                                        size={16}
-                                        className="text-blue-600 mt-0.5 shrink-0"
-                                    />
-                                    <div>
-                                        <p className="font-medium text-gray-900">
-                                            Route Type
-                                        </p>
-                                        <p className="text-gray-600">
-                                            City Loop Circuit
-                                        </p>
-                                    </div>
-                                </div> 
-                        */
+                </div>
+            )}
+*/
