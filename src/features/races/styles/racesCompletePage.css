@@ -1,0 +1,186 @@
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Antonio:wght@700&family=Work+Sans:wght@400;500;600;700&display=swap");
+
+.font-display {
+    font-family: "Antonio", sans-serif;
+    letter-spacing: -0.02em;
+}
+
+.font-heading {
+    font-family: "Bebas Neue", sans-serif;
+    letter-spacing: 0.02em;
+}
+
+.font-body {
+    font-family: "Work Sans", sans-serif;
+}
+
+.hero-gradient {
+    background: linear-gradient(
+        135deg,
+        rgba(8, 145, 178, 0.1) 0%,
+        rgba(22, 163, 74, 0.1) 50%,
+        rgba(234, 88, 12, 0.1) 100%
+    );
+}
+
+.fade-in {
+    animation: fadeIn 0.6s ease-out;
+}
+
+.fade-in-delay-1 {
+    animation: fadeIn 0.6s ease-out 0.2s both;
+}
+
+.fade-in-delay-2 {
+    animation: fadeIn 0.6s ease-out 0.4s both;
+}
+
+.fade-in-delay-3 {
+    animation: fadeIn 0.6s ease-out 0.6s both;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.podium-1 {
+    animation: riseUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
+.podium-2 {
+    animation: riseUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+}
+
+.podium-3 {
+    animation: riseUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+}
+
+@keyframes riseUp {
+    from {
+        opacity: 0;
+        transform: translateY(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.trophy-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.shine {
+    position: relative;
+    overflow: hidden;
+}
+
+.shine::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 70%
+    );
+    animation: shine 3s infinite;
+}
+
+@keyframes shine {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+}
+
+.stat-card {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(8, 145, 178, 0.15);
+}
+
+.result-row {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.result-row:hover {
+    background: rgba(8, 145, 178, 0.05);
+    transform: translateX(4px);
+}
+
+.medal-gold {
+    background: linear-gradient(135deg, #ffd700, #ffa500);
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+}
+
+.medal-silver {
+    background: linear-gradient(135deg, #c0c0c0, #808080);
+    box-shadow: 0 4px 15px rgba(192, 192, 192, 0.4);
+}
+
+.medal-bronze {
+    background: linear-gradient(135deg, #cd7f32, #8b4513);
+    box-shadow: 0 4px 15px rgba(205, 127, 50, 0.4);
+}
+
+.grain-texture {
+    position: relative;
+}
+
+.grain-texture::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+}
+
+.certificate-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.certificate-btn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.certificate-btn:hover::after {
+    width: 300px;
+    height: 300px;
+}

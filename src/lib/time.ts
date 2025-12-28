@@ -21,3 +21,4 @@ export function formatLastUpdate(timestamp?: number) {
 
     return `${Math.floor(diff / 3600000)}h ago`
 }
+
