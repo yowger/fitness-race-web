@@ -376,3 +376,73 @@ export const useUpdateParticipantBib = () => {
         },
     })
 }
+export interface RaceResultResponse {
+    race_id: string
+    bib_number: number | null
+    total_participants: number
+    race: {
+        id: string
+        name: string
+        description?: string
+        banner_url?: string
+        start_time: string
+        end_time?: string
+        created_by?: string
+        route?: {
+            id: string
+            name: string
+            description?: string
+            distance?: number
+            start_address?: string
+            end_address?: string
+        } | null
+    }
+    result: {
+        finish_time: number | null
+        position: number | null
+        status: "Finished" | "DNF" | "DNS" | "Disqualified" | "Did Not Join"
+    }
+}
+
+export interface RunnerResultsPaginatedParams {
+    userId: string
+    limit?: number
+    offset?: number
+}
+
+export interface RunnerResultsPaginatedResponse {
+    results: RaceResultResponse[]
+    totalRaces: number
+}
+
+export const getRunnerResultsPaginated = async ({
+    userId,
+    limit,
+    offset,
+}: RunnerResultsPaginatedParams): Promise<RunnerResultsPaginatedResponse> => {
+    const res = await privateApi.get("/api/group-races/results/paginated", {
+        params: {
+            userId,
+            limit,
+            offset,
+        },
+    })
+
+    return res.data
+}
+
+export const useRunnerResultsPaginated = ({
+    userId,
+    limit,
+    offset,
+}: RunnerResultsPaginatedParams) =>
+    useQuery({
+        queryKey: ["runner-results-paginated", userId, limit, offset],
+        queryFn: () =>
+            getRunnerResultsPaginated({
+                userId,
+                limit,
+                offset,
+            }),
+        enabled: !!userId,
+    })

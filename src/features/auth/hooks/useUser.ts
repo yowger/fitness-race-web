@@ -8,6 +8,8 @@ export interface UserResponse {
     full_name: string
     username?: string
     avatar_url?: string
+    created_at?: string
+    updated_at?: string
 }
 
 export interface CreateUserInput {
@@ -39,6 +41,20 @@ export const useUser = () => {
     return useQuery<UserResponse>({
         queryKey: ["currentUser"],
         queryFn: getUser,
+        staleTime: 1000 * 60 * 5,
+        retry: 1,
+    })
+}
+
+export const getProfileById = async (userId: string) => {
+    const res = await api.get(`/api/users/${userId}`)
+    return res.data as UserResponse
+}
+
+export const useProfileById = (userId: string) => {
+    return useQuery<UserResponse>({
+        queryKey: ["userProfile", userId],
+        queryFn: () => getProfileById(userId),
         staleTime: 1000 * 60 * 5,
         retry: 1,
     })

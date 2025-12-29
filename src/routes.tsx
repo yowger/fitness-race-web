@@ -6,7 +6,7 @@ import SignInPage from "./features/auth/pages/SignInPage"
 import SignUpPage from "./features/auth/pages/SignUpPage"
 import AuthGuestRoute from "./features/auth/layouts/AuthGuestRoute"
 import RunningLandingPage from "./features/landing/pages/LandingPage"
-import ProfilePage from "./features/profile/pages/ProfilePage"
+// import ProfilePage from "./features/profile/pages/ProfilePage"
 import DashboardLayout from "./features/dashboard/layouts/DashboardLayout"
 import RoutesPage from "./features/routes/pages/RoutesPage"
 import RoutesCreatePage from "./features/routes/pages/RoutesCreatePage"
@@ -19,6 +19,7 @@ import RaceCreatePage from "./features/races/pages/RacesFormPage"
 import DashboardPage from "./features/dashboard/pages/DashboardPage"
 import RacesOngoingPage from "./features/races/pages/RacesOngoingPage"
 import RacesCompletePage from "./features/races/pages/RacesCompletePage"
+import ProfilePage from "./features/profile/pages/ProfilePage"
 
 const router = createBrowserRouter([
     {
@@ -44,7 +45,7 @@ const router = createBrowserRouter([
                         element: <DashboardLayout />,
                         children: [
                             { path: "", element: <DashboardPage /> },
-                            { path: "profile", element: <ProfilePage /> },
+                            { path: "profile/:id", element: <ProfilePage /> },
                             {
                                 path: "routes",
                                 children: [
