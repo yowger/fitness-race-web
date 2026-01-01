@@ -446,3 +446,28 @@ export const useRunnerResultsPaginated = ({
             }),
         enabled: !!userId,
     })
+
+export interface RunnerProfileStats {
+    totalRaces: number
+    totalDistance: string
+    totalTime: string
+    averagePace: string
+}
+
+export const getRunnerProfileStats = async (
+    userId: string
+): Promise<RunnerProfileStats> => {
+    const res = await privateApi.get("/api/group-races/runners/stats", {
+        params: { userId },
+    })
+
+    return res.data
+}
+
+export const useRunnerProfileStats = (userId?: string) =>
+    useQuery({
+        queryKey: ["runner-profile-stats", userId],
+        queryFn: () => getRunnerProfileStats(userId!),
+        enabled: !!userId,
+        staleTime: 1000 * 60 * 5,
+    })

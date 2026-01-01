@@ -2,17 +2,8 @@ import { useState } from "react"
 import {
     Trophy,
     Award,
-    // TrendingUp,
     Calendar,
-    // MapPin,
-    // Clock,
-    // Zap,
-    // Target,
     Medal,
-    // Share2,
-    // Edit,
-    // User,
-    // Activity,
     Flag,
     Plus,
     Users,
@@ -23,168 +14,6 @@ import {
     Clock,
     Search,
 } from "lucide-react"
-
-// Mock runner data
-const RUNNER_PROFILE = {
-    id: "1",
-    name: "Maria Santos",
-    username: "@mariasantos",
-    bio: "Marathon runner | Trail enthusiast | Chasing PRs one race at a time 🏃‍♀️",
-    location: "Cebu City, Philippines",
-    joinedDate: "January 2024",
-    avatar: "https://ui-avatars.com/api/?name=Maria+Santos&background=0891b2&color=fff&size=200",
-    coverImage:
-        "https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?w=1200&q=80",
-    stats: {
-        totalRaces: 24,
-        totalDistance: "287.5 km",
-        totalTime: "42:15:30",
-        averagePace: "5:45 /km",
-        podiumFinishes: 8,
-        personalRecords: 3,
-    },
-    achievements: [
-        {
-            id: 1,
-            name: "First Race",
-            description: "Completed your first race",
-            icon: "🎯",
-            date: "Jan 2024",
-            unlocked: true,
-        },
-        {
-            id: 2,
-            name: "Speed Demon",
-            description: "Finished a 5K under 20 minutes",
-            icon: "⚡",
-            date: "Mar 2024",
-            unlocked: true,
-        },
-        {
-            id: 3,
-            name: "Marathon Master",
-            description: "Completed your first marathon",
-            icon: "🏆",
-            date: "May 2024",
-            unlocked: true,
-        },
-        {
-            id: 4,
-            name: "Podium Regular",
-            description: "Finish in top 3 five times",
-            icon: "🥇",
-            date: "Aug 2024",
-            unlocked: true,
-        },
-        {
-            id: 5,
-            name: "Century Runner",
-            description: "Run 100km total",
-            icon: "💯",
-            date: "Jun 2024",
-            unlocked: true,
-        },
-        {
-            id: 6,
-            name: "Early Bird",
-            description: "Complete 10 races before 6 AM",
-            icon: "🌅",
-            date: "Not unlocked",
-            unlocked: false,
-        },
-    ],
-    personalRecords: [
-        {
-            distance: "5K",
-            time: "00:18:45",
-            pace: "3:45 /km",
-            race: "City Fun Run",
-            date: "Aug 25, 2025",
-        },
-        {
-            distance: "10K",
-            time: "00:39:20",
-            pace: "3:56 /km",
-            race: "Harbor Run",
-            date: "Jul 15, 2025",
-        },
-        {
-            distance: "21K",
-            time: "01:28:15",
-            pace: "4:12 /km",
-            race: "Half Marathon",
-            date: "Jun 10, 2025",
-        },
-    ],
-    recentRaces: [
-        {
-            id: 1,
-            name: "City Fun Run",
-            date: "Aug 25, 2025",
-            distance: "5K",
-            time: "00:18:45",
-            position: 1,
-            totalParticipants: 234,
-            image: "https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?w=400&q=80",
-        },
-        {
-            id: 2,
-            name: "Harbor Run",
-            date: "Jul 15, 2025",
-            distance: "10K",
-            time: "00:39:20",
-            position: 3,
-            totalParticipants: 189,
-            image: "https://images.unsplash.com/photo-1513593771513-7b58b6c4af38?w=400&q=80",
-        },
-        {
-            id: 3,
-            name: "Mountain Trail",
-            date: "Jun 30, 2025",
-            distance: "15K",
-            time: "01:15:30",
-            position: 5,
-            totalParticipants: 156,
-            image: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=400&q=80",
-        },
-        {
-            id: 4,
-            name: "Half Marathon",
-            date: "Jun 10, 2025",
-            distance: "21K",
-            time: "01:28:15",
-            position: 2,
-            totalParticipants: 312,
-            image: "https://images.unsplash.com/photo-1532444458054-01a7dd3e9fca?w=400&q=80",
-        },
-    ],
-    activityFeed: [
-        {
-            id: 1,
-            type: "race",
-            text: "Completed City Fun Run and won 1st place! 🥇",
-            time: "2 days ago",
-        },
-        {
-            id: 2,
-            type: "achievement",
-            text: "Unlocked achievement: Podium Regular",
-            time: "2 days ago",
-        },
-        {
-            id: 3,
-            type: "pr",
-            text: "New personal record in 5K: 18:45",
-            time: "2 days ago",
-        },
-        {
-            id: 4,
-            type: "race",
-            text: "Completed Harbor Run - 3rd place finish",
-            time: "1 week ago",
-        },
-    ],
-}
 
 const formatDate = (date?: string) =>
     date ? new Date(date).toLocaleDateString() : "—"
@@ -216,7 +45,11 @@ const getRaceStatusStyle = (status: string) => {
 import "../styles/dashboardPage.css"
 import { useProfileById } from "../../auth/hooks/useUser"
 import { getAvatarUrl } from "../../../lib/avatar"
-import { useRaces, useRunnerResultsPaginated } from "../../races/hooks/useRaces"
+import {
+    useRaces,
+    useRunnerProfileStats,
+    useRunnerResultsPaginated,
+} from "../../races/hooks/useRaces"
 
 export default function RunnerProfilePage({ id }: { id: string }) {
     const { data: user } = useProfileById(id)
@@ -224,20 +57,14 @@ export default function RunnerProfilePage({ id }: { id: string }) {
         status: "upcoming",
         userId: user?.id,
     })
-    console.log("🚀 ~ RunnerProfilePage ~ myUpcomingRaces:", myUpcomingRaces)
-    // const {} = useResults({
-    //     userId: user?.id,
-    // })
     const { data } = useRunnerResultsPaginated({
         userId: user?.id || "",
     })
     const { data: myHostedRaces } = useRaces({
         createdBy: user?.id,
     })
-    console.log("🚀 ~ RunnerProfilePage ~ data:", data)
-
+    const { data: stats } = useRunnerProfileStats(user?.id)
     const [activeTab, setActiveTab] = useState("overview")
-    // const [isOwnProfile] = useState(true)
 
     const getPositionBadge = (position: number) => {
         if (position === 1)
@@ -276,7 +103,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                     className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 cover-gradient"></div>
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-50"></div>
+                <div className="absolute inset-0 bg-linear-to-b from-transparent to-gray-50"></div>
             </div>
 
             <div className="max-w-7xl mx-auto px-6 -mt-20 relative z-10">
@@ -316,7 +143,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t-2 border-gray-200">
                         <div className="text-center">
                             <div className="font-display text-4xl text-cyan-600 mb-1">
-                                {RUNNER_PROFILE.stats.totalRaces}
+                                {stats?.totalRaces || 0}
                             </div>
                             <div className="font-body text-sm text-zinc-600 uppercase tracking-wider">
                                 Total Races
@@ -324,7 +151,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                         </div>
                         <div className="text-center">
                             <div className="font-display text-4xl text-green-600 mb-1">
-                                {RUNNER_PROFILE.stats.totalDistance}
+                                {stats?.totalDistance || 0}
                             </div>
                             <div className="font-body text-sm text-zinc-600 uppercase tracking-wider">
                                 Distance
@@ -332,7 +159,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                         </div>
                         <div className="text-center">
                             <div className="font-display text-4xl text-orange-600 mb-1">
-                                {RUNNER_PROFILE.stats.totalTime}
+                                {stats?.totalTime || 0}
                             </div>
                             <div className="font-body text-sm text-zinc-600 uppercase tracking-wider">
                                 Total Time
@@ -340,7 +167,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                         </div>
                         <div className="text-center">
                             <div className="font-display text-4xl text-purple-600 mb-1">
-                                {RUNNER_PROFILE.stats.averagePace}
+                                {stats?.averagePace || 0}
                             </div>
                             <div className="font-body text-sm text-zinc-600 uppercase tracking-wider">
                                 Avg Pace
