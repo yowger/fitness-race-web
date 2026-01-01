@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Calendar, Clock, Flag, MapPin, Play, Users } from "lucide-react"
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 import {
     useAddParticipant,
     useRace,
@@ -406,41 +406,46 @@ export default function RaceDetailPage() {
                                     ></div>
                                 )}
 
-                                <div className="mt-8 p-6 bg-gray-50 border border-gray-300 rounded-lg">
-                                    <div className="flex items-start gap-4">
-                                        <img
-                                            src={getAvatarUrl(
-                                                race?.created_by_user
-                                                    .full_name || "",
-                                                {
-                                                    size: 64,
-                                                    rounded: false,
-                                                }
-                                            )}
-                                            alt={
-                                                race?.created_by_user.full_name
-                                            }
-                                            className="w-16 h-16 rounded-full"
-                                        />
-                                        <div>
-                                            <h3 className="flex font-heading items-center gap-2 text-2xl text-gray-900 mb-1">
-                                                {
+                                <Link
+                                    to={`/dashboard/profile/${race?.created_by_user.id}`}
+                                >
+                                    <div className="mt-8 p-6 bg-gray-50 border border-gray-300 rounded-lg">
+                                        <div className="flex items-start gap-4">
+                                            <img
+                                                src={getAvatarUrl(
+                                                    race?.created_by_user
+                                                        .full_name || "",
+                                                    {
+                                                        size: 64,
+                                                        rounded: false,
+                                                    }
+                                                )}
+                                                alt={
                                                     race?.created_by_user
                                                         .full_name
                                                 }
+                                                className="w-16 h-16 rounded-full"
+                                            />
+                                            <div>
+                                                <h3 className="flex font-heading items-center gap-2 text-2xl text-gray-900 mb-1 hover:text-cyan-600">
+                                                    {
+                                                        race?.created_by_user
+                                                            .full_name
+                                                    }
 
-                                                {isHost && (
-                                                    <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
-                                                        Host
-                                                    </span>
-                                                )}
-                                            </h3>
-                                            <p className="font-body text-gray-600">
-                                                Promoting health and fitness
-                                            </p>
+                                                    {isHost && (
+                                                        <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                                                            Host
+                                                        </span>
+                                                    )}
+                                                </h3>
+                                                <p className="font-body text-gray-600">
+                                                    Promoting health and fitness
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </Link>
                             </div>
                         )}
 
