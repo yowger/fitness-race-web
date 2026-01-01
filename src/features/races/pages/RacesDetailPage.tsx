@@ -616,6 +616,15 @@ export default function RaceDetailPage() {
                                 </div>
                             </div>
 
+                            {isHost && (
+                                <Link
+                                    to={`/dashboard/races/${race?.id}/live`}
+                                    className="block w-full mb-4 py-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-white font-heading text-2xl rounded-lg text-center hover:shadow-2xl hover:shadow-orange-400 transition-all"
+                                >
+                                    GO LIVE
+                                </Link>
+                            )}
+
                             {!isHost && (
                                 <>
                                     {hasJoined ? (
@@ -640,7 +649,7 @@ export default function RaceDetailPage() {
                                             className={`w-full py-4 font-heading text-2xl rounded-lg transition-all
                     ${
                         race?.status === "upcoming"
-                            ? "bg-linear-to-br from-electric-cyan to-lime-green text-gray-900 hover:shadow-2xl hover:shadow-electric-cyan/50"
+                            ? "bg-linear-to-br from-cyan-400 to-lime-600 text-white hover:shadow-2xl hover:shadow-electric-cyan/50"
                             : "bg-gray-300 text-gray-500 cursor-not-allowed"
                     }
                 `}
