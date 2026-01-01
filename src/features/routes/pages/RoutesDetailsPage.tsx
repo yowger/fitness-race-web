@@ -214,7 +214,7 @@ const RouteDetailsPage = () => {
             </div>
 
             <div className="max-w-7xl mx-auto px-6 py-8">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 fade-in-delay-1">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 fade-in-delay-1">
                     <div className="stat-card bg-white rounded-lg border-2 border-gray-200 p-6 shadow-sm text-center">
                         <TrendingUp className="w-8 h-8 text-cyan-600 mx-auto mb-2" />
                         <div className="font-body text-sm text-zinc-600 mb-1 uppercase tracking-wider">
@@ -254,7 +254,7 @@ const RouteDetailsPage = () => {
                         </div>
                     </div>
 
-                    <div className="stat-card bg-white rounded-lg border-2 border-orange-200 p-6 shadow-sm text-center">
+                    {/* <div className="stat-card bg-white rounded-lg border-2 border-orange-200 p-6 shadow-sm text-center">
                         <Flag className="w-8 h-8 text-orange-600 mx-auto mb-2" />
                         <div className="font-body text-sm text-zinc-600 mb-1 uppercase tracking-wider">
                             Elevation
@@ -265,7 +265,7 @@ const RouteDetailsPage = () => {
                         <div className="font-body text-sm text-zinc-500">
                             meters
                         </div>
-                    </div>
+                    </div> */}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
