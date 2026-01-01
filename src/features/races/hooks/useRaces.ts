@@ -388,6 +388,7 @@ export interface RaceResultResponse {
         start_time: string
         end_time?: string
         created_by?: string
+        status: GroupRaceStatus
         route?: {
             id: string
             name: string
@@ -404,8 +405,11 @@ export interface RaceResultResponse {
     }
 }
 
+type GroupRaceStatus = "upcoming" | "ongoing" | "finished" | "complete"
+
 export interface RunnerResultsPaginatedParams {
     userId: string
+    status?: GroupRaceStatus
     limit?: number
     offset?: number
 }
@@ -433,6 +437,7 @@ export const getRunnerResultsPaginated = async ({
 
 export const useRunnerResultsPaginated = ({
     userId,
+    status,
     limit,
     offset,
 }: RunnerResultsPaginatedParams) =>
@@ -441,6 +446,7 @@ export const useRunnerResultsPaginated = ({
         queryFn: () =>
             getRunnerResultsPaginated({
                 userId,
+                status,
                 limit,
                 offset,
             }),
