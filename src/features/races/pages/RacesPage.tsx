@@ -87,9 +87,7 @@ export default function RacesPage() {
         total: filteredRaces.length,
         upcoming: filteredRaces.filter((r) => r.status === "upcoming").length,
         ongoing: filteredRaces.filter((r) => r.status === "ongoing").length,
-        finished: filteredRaces.filter(
-            (r) => r.status === "finished" || r.status === "complete"
-        ).length,
+        complete: filteredRaces.filter((r) => r.status === "complete").length,
     }
 
     return (
@@ -241,7 +239,7 @@ export default function RacesPage() {
                         <div className="stat-card bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-lg p-4 text-center">
                             <TrendingUp className="w-6 h-6 text-purple-600 mx-auto mb-2" />
                             <div className="font-display text-3xl text-purple-700">
-                                {stats.finished}
+                                {stats.complete}
                             </div>
                             <div className="font-body text-xs text-zinc-600 uppercase tracking-wider">
                                 Completed
@@ -263,29 +261,34 @@ export default function RacesPage() {
                         </div>
 
                         <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-                            {["all", "upcoming", "ongoing", "finished"].map(
-                                (filter) => (
-                                    <button
-                                        key={filter}
-                                        onClick={() =>
-                                            setStatusFilter(
-                                                filter as
-                                                    | "upcoming"
-                                                    | "ongoing"
-                                                    | "finished"
-                                                    | "all"
-                                            )
-                                        }
-                                        className={`filter-button px-6 py-3 rounded-lg font-heading text-base whitespace-nowrap ${
-                                            statusFilter === filter
-                                                ? "active"
-                                                : "bg-white border-2 border-gray-300 text-zinc-700 hover:bg-gray-50"
-                                        }`}
-                                    >
-                                        {filter.toUpperCase()}
-                                    </button>
-                                )
-                            )}
+                            {[
+                                "all",
+                                "upcoming",
+                                "ongoing",
+                                // "finished",
+                                "complete",
+                            ].map((filter) => (
+                                <button
+                                    key={filter}
+                                    onClick={() =>
+                                        setStatusFilter(
+                                            filter as
+                                                | "upcoming"
+                                                | "ongoing"
+                                                // | "finished"
+                                                | "complete"
+                                                | "all"
+                                        )
+                                    }
+                                    className={`filter-button px-6 py-3 rounded-lg font-heading text-base whitespace-nowrap ${
+                                        statusFilter === filter
+                                            ? "active"
+                                            : "bg-white border-2 border-gray-300 text-zinc-700 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    {filter.toUpperCase()}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -429,11 +432,11 @@ function RaceCard({
                     </h3>
 
                     {/* Description */}
-                    {race.description && (
+                    {/* {race.description && (
                         <p className="font-body text-sm text-zinc-600 mb-4 line-clamp-2">
                             {race.description}
                         </p>
-                    )}
+                    )} */}
 
                     {/* Details */}
                     <div className="space-y-3 mb-4">
