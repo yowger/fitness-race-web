@@ -10,7 +10,7 @@ import {
     AlertCircle,
     Radio,
 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useEndRace, useRace, useStartRace } from "../hooks/useRaces"
 import { useUser } from "../../auth/hooks/useUser"
@@ -53,6 +53,7 @@ function formatElapsedTime(seconds: number) {
 import "../styles/racesOngoingPage.css"
 import { formatDate } from "../../../lib/time"
 import { getBoundsFromCoords } from "../../../lib/geo"
+import { toast } from "sonner"
 
 type ParticipantStatus = "running" | "finished" | "offline"
 
@@ -226,6 +227,22 @@ export default function AdminRaceTracking() {
                 else if (p.role === "guest") guests.push(p.userId)
             })
 
+            const prev = prevOnlineRef.current
+
+            // JOINED
+            Object.keys(users).forEach((userId) => {
+                if (!prev[userId] && userId !== user.id) {
+                    toast.success(`Runner has the joined the race`)
+                }
+            })
+
+            // LEFT
+            Object.keys(prev).forEach((userId) => {
+                if (!users[userId] && userId !== user.id) {
+                    toast(`Runner has left the race`)
+                }
+            })
+
             setOnlineUsers(users)
             // setOnlineAdmins(admins)
             setOnlineRacers(racers)
@@ -257,11 +274,41 @@ export default function AdminRaceTracking() {
             refetchLiveRace?.()
         })
 
+        socket.on(
+            "participantJoined",
+            ({
+                userId,
+            }: {
+                raceId: string
+                userId: string
+                role: "admin" | "racer" | "guest"
+            }) => {
+                if (userId === user.id) return
+
+                toast(`Participant ${userId} joined the race`)
+            }
+        )
+
+        socket.on(
+            "participantLeft",
+            ({
+                userId,
+            }: {
+                raceId: string
+                userId: string
+                role: "admin" | "racer" | "guest"
+            }) => {
+                toast(`Participant ${userId} left the race`)
+            }
+        )
+
         return () => {
             socket.emit("leaveRace", { raceId: id, userId: user.id })
             socket.off("onlineParticipants")
             socket.off("participantUpdate")
             socket.off("raceStatusUpdate")
+            socket.off("participantJoined")
+            socket.off("participantLeft")
         }
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -319,6 +366,8 @@ export default function AdminRaceTracking() {
                 return "bg-yellow-500"
         }
     }
+
+    const prevOnlineRef = useRef<Record<string, OnlineUser>>({})
 
     return (
         <div className="min-h-screen bg-gray-50 text-zinc-900 font-body">
