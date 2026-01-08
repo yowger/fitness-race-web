@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "1451dcec-33dc-4e89-8ff6-bb95c7f98078"
+      }
+    },
+    "android": {
+      "package": "com.yowger.runweb"
+    }
+  }
+}

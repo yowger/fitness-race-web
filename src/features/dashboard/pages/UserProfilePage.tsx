@@ -13,6 +13,7 @@ import {
     Target,
     Clock,
     Search,
+    Play,
 } from "lucide-react"
 
 const formatDate = (date?: string) =>
@@ -62,7 +63,7 @@ const raceStatusStyles: Record<string, { label: string; className: string }> = {
 }
 
 import "../styles/dashboardPage.css"
-import { useProfileById } from "../../auth/hooks/useUser"
+import { useProfileById, useUser } from "../../auth/hooks/useUser"
 import { getAvatarUrl } from "../../../lib/avatar"
 import {
     useRaces,
@@ -72,6 +73,7 @@ import {
 import { Link } from "react-router-dom"
 
 export default function RunnerProfilePage({ id }: { id: string }) {
+    const { data: me } = useUser()
     const { data: user } = useProfileById(id)
     const { data: myUpcomingRaces } = useRaces({
         status: "upcoming",
@@ -86,6 +88,8 @@ export default function RunnerProfilePage({ id }: { id: string }) {
     })
     const { data: stats } = useRunnerProfileStats(user?.id)
     const [activeTab, setActiveTab] = useState("overview")
+
+    const isMe = me?.id === user?.id
 
     const getPositionBadge = (position: number) => {
         if (position === 1)
@@ -426,7 +430,9 @@ export default function RunnerProfilePage({ id }: { id: string }) {
 
                                 return (
                                     <div>
-                                        <Link to={`/dashboard/races/${race.id}`}>
+                                        <Link
+                                            to={`/dashboard/races/${race.id}`}
+                                        >
                                             <div
                                                 key={race.id}
                                                 className="race-card bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm"
@@ -622,188 +628,181 @@ export default function RunnerProfilePage({ id }: { id: string }) {
 
                                 return (
                                     <div key={race.id}>
-                                        <Link
-                                            to={`/dashboard/races/${race.id}`}
+                                        <div
+                                            className={`race-card bg-white border-2 rounded-xl overflow-hidden shadow-sm ${
+                                                isUrgent
+                                                    ? "border-red-300 ring-2 ring-red-100"
+                                                    : "border-gray-200"
+                                            }`}
                                         >
-                                            <div
-                                                className={`race-card bg-white border-2 rounded-xl overflow-hidden shadow-sm ${
-                                                    isUrgent
-                                                        ? "border-red-300 ring-2 ring-red-100"
-                                                        : "border-gray-200"
-                                                }`}
-                                            >
-                                                {/* Banner with countdown overlay */}
-                                                <div className="relative h-48">
-                                                    <img
-                                                        src={
-                                                            race.banner_url ??
-                                                            "/placeholder-race.jpg"
-                                                        }
-                                                        alt={race.name}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                                            {/* Banner with countdown overlay */}
+                                            <div className="relative h-48">
+                                                <img
+                                                    src={
+                                                        race.banner_url ??
+                                                        "/placeholder-race.jpg"
+                                                    }
+                                                    alt={race.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
 
-                                                    {/* Countdown badge - prominent */}
-                                                    <div className="absolute top-4 right-4">
-                                                        {isToday ? (
-                                                            <div className="px-5 py-3 bg-gradient-to-r from-red-500 to-red-600 rounded-lg shadow-xl animate-pulse">
-                                                                <div className="font-heading text-white text-lg flex items-center gap-2">
-                                                                    <Zap className="w-5 h-5" />
-                                                                    RACE DAY!
-                                                                </div>
+                                                {/* Countdown badge - prominent */}
+                                                <div className="absolute top-4 right-4">
+                                                    {isToday ? (
+                                                        <div className="px-5 py-3 bg-gradient-to-r from-red-500 to-red-600 rounded-lg shadow-xl animate-pulse">
+                                                            <div className="font-heading text-white text-lg flex items-center gap-2">
+                                                                <Zap className="w-5 h-5" />
+                                                                RACE DAY!
                                                             </div>
-                                                        ) : (
-                                                            <div
-                                                                className={`px-5 py-3 rounded-lg shadow-xl ${
-                                                                    isUrgent
-                                                                        ? "bg-gradient-to-r from-red-500 to-red-600"
-                                                                        : "bg-gradient-to-r from-cyan-600 to-green-600"
-                                                                }`}
-                                                            >
-                                                                <div className="font-display text-3xl text-white leading-none mb-1">
-                                                                    {days}
-                                                                </div>
-                                                                <div className="font-body text-xs text-white/90 uppercase tracking-wider">
-                                                                    {days === 1
-                                                                        ? "Day Left"
-                                                                        : "Days Left"}
-                                                                </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div
+                                                            className={`px-5 py-3 rounded-lg shadow-xl ${
+                                                                isUrgent
+                                                                    ? "bg-gradient-to-r from-red-500 to-red-600"
+                                                                    : "bg-gradient-to-r from-cyan-600 to-green-600"
+                                                            }`}
+                                                        >
+                                                            <div className="font-display text-3xl text-white leading-none mb-1">
+                                                                {days}
                                                             </div>
-                                                        )}
-                                                    </div>
+                                                            <div className="font-body text-xs text-white/90 uppercase tracking-wider">
+                                                                {days === 1
+                                                                    ? "Day Left"
+                                                                    : "Days Left"}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
 
-                                                    {/* Race name overlay */}
-                                                    <div className="absolute bottom-4 left-4 right-4">
-                                                        <h3 className="font-display text-2xl text-white mb-2 drop-shadow-lg">
-                                                            {race.name}
-                                                        </h3>
-                                                        <div className="flex items-center gap-3 text-sm text-white/90">
+                                                {/* Race name overlay */}
+                                                <div className="absolute bottom-4 left-4 right-4">
+                                                    <h3 className="font-display text-2xl text-white mb-2 drop-shadow-lg">
+                                                        {race.name}
+                                                    </h3>
+                                                    <div className="flex items-center gap-3 text-sm text-white/90">
+                                                        <span className="flex items-center gap-1 bg-black/30 backdrop-blur-sm px-2 py-1 rounded">
+                                                            <Calendar className="w-4 h-4" />
+                                                            {formatDate(
+                                                                race.start_time
+                                                            )}
+                                                        </span>
+                                                        {race.routes
+                                                            ?.distance && (
                                                             <span className="flex items-center gap-1 bg-black/30 backdrop-blur-sm px-2 py-1 rounded">
-                                                                <Calendar className="w-4 h-4" />
-                                                                {formatDate(
-                                                                    race.start_time
+                                                                <Flag className="w-4 h-4" />
+                                                                {formatDistance(
+                                                                    race.routes
+                                                                        .distance
                                                                 )}
                                                             </span>
-                                                            {race.routes
-                                                                ?.distance && (
-                                                                <span className="flex items-center gap-1 bg-black/30 backdrop-blur-sm px-2 py-1 rounded">
-                                                                    <Flag className="w-4 h-4" />
-                                                                    {formatDistance(
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Content */}
+                                            <div className="p-6">
+                                                {/* Location */}
+                                                {race.routes?.start_address && (
+                                                    <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                                        <div className="flex items-start gap-3">
+                                                            <MapPin className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                                                            <div>
+                                                                <div className="font-body font-semibold text-zinc-900 mb-1">
+                                                                    Starting
+                                                                    Point
+                                                                </div>
+                                                                <div className="font-body text-sm text-zinc-600">
+                                                                    {
                                                                         race
                                                                             .routes
-                                                                            .distance
-                                                                    )}
-                                                                </span>
+                                                                            .start_address
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Race Details Grid */}
+                                                <div className="grid grid-cols-3 gap-3 mb-6">
+                                                    <div className="text-center p-3 bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-lg border border-cyan-200">
+                                                        <Clock className="w-5 h-5 text-cyan-600 mx-auto mb-1" />
+                                                        <div className="font-display text-xl text-cyan-700">
+                                                            {new Date(
+                                                                race.start_time
+                                                            ).toLocaleTimeString(
+                                                                "en-US",
+                                                                {
+                                                                    hour: "2-digit",
+                                                                    minute: "2-digit",
+                                                                    hour12: true,
+                                                                }
                                                             )}
+                                                        </div>
+                                                        <div className="font-body text-xs text-zinc-600 uppercase">
+                                                            Start Time
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-center p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+                                                        <Users className="w-5 h-5 text-green-600 mx-auto mb-1" />
+                                                        <div className="font-display text-xl text-green-700">
+                                                            {race.participants
+                                                                ?.length ?? 0}
+                                                        </div>
+                                                        <div className="font-body text-xs text-zinc-600 uppercase">
+                                                            Registered
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                                                        <Target className="w-5 h-5 text-purple-600 mx-auto mb-1" />
+                                                        <div className="font-display text-xl text-purple-700">
+                                                            {race.routes
+                                                                ?.distance
+                                                                ? formatDistance(
+                                                                      race
+                                                                          .routes
+                                                                          .distance
+                                                                  )
+                                                                : "—"}
+                                                        </div>
+                                                        <div className="font-body text-xs text-zinc-600 uppercase">
+                                                            Distance
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                {/* Content */}
-                                                <div className="p-6">
-                                                    {/* Location */}
-                                                    {race.routes
-                                                        ?.start_address && (
-                                                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                                            <div className="flex items-start gap-3">
-                                                                <MapPin className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                                                                <div>
-                                                                    <div className="font-body font-semibold text-zinc-900 mb-1">
-                                                                        Starting
-                                                                        Point
-                                                                    </div>
-                                                                    <div className="font-body text-sm text-zinc-600">
-                                                                        {
-                                                                            race
-                                                                                .routes
-                                                                                .start_address
-                                                                        }
-                                                                    </div>
+                                                {/* Weather & Tips */}
+                                                {isUrgent && (
+                                                    <div className="mb-6 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-lg">
+                                                        <div className="flex items-start gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                                                                <Zap className="w-4 h-4 text-white" />
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-heading text-base text-orange-900 mb-1">
+                                                                    RACE
+                                                                    PREPARATION
                                                                 </div>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Race Details Grid */}
-                                                    <div className="grid grid-cols-3 gap-3 mb-6">
-                                                        <div className="text-center p-3 bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-lg border border-cyan-200">
-                                                            <Clock className="w-5 h-5 text-cyan-600 mx-auto mb-1" />
-                                                            <div className="font-display text-xl text-cyan-700">
-                                                                {new Date(
-                                                                    race.start_time
-                                                                ).toLocaleTimeString(
-                                                                    "en-US",
-                                                                    {
-                                                                        hour: "2-digit",
-                                                                        minute: "2-digit",
-                                                                        hour12: true,
-                                                                    }
-                                                                )}
-                                                            </div>
-                                                            <div className="font-body text-xs text-zinc-600 uppercase">
-                                                                Start Time
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-center p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
-                                                            <Users className="w-5 h-5 text-green-600 mx-auto mb-1" />
-                                                            <div className="font-display text-xl text-green-700">
-                                                                {race
-                                                                    .participants
-                                                                    ?.length ??
-                                                                    0}
-                                                            </div>
-                                                            <div className="font-body text-xs text-zinc-600 uppercase">
-                                                                Registered
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-                                                            <Target className="w-5 h-5 text-purple-600 mx-auto mb-1" />
-                                                            <div className="font-display text-xl text-purple-700">
-                                                                {race.routes
-                                                                    ?.distance
-                                                                    ? formatDistance(
-                                                                          race
-                                                                              .routes
-                                                                              .distance
-                                                                      )
-                                                                    : "—"}
-                                                            </div>
-                                                            <div className="font-body text-xs text-zinc-600 uppercase">
-                                                                Distance
+                                                                <div className="font-body text-sm text-orange-800">
+                                                                    {isToday
+                                                                        ? "🎯 Race starts today! Check your gear and arrive early."
+                                                                        : `⏰ ${days} day${
+                                                                              days >
+                                                                              1
+                                                                                  ? "s"
+                                                                                  : ""
+                                                                          } left. Start your prep routine and stay hydrated.`}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
+                                                )}
 
-                                                    {/* Weather & Tips */}
-                                                    {isUrgent && (
-                                                        <div className="mb-6 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-lg">
-                                                            <div className="flex items-start gap-3">
-                                                                <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
-                                                                    <Zap className="w-4 h-4 text-white" />
-                                                                </div>
-                                                                <div>
-                                                                    <div className="font-heading text-base text-orange-900 mb-1">
-                                                                        RACE
-                                                                        PREPARATION
-                                                                    </div>
-                                                                    <div className="font-body text-sm text-orange-800">
-                                                                        {isToday
-                                                                            ? "🎯 Race starts today! Check your gear and arrive early."
-                                                                            : `⏰ ${days} day${
-                                                                                  days >
-                                                                                  1
-                                                                                      ? "s"
-                                                                                      : ""
-                                                                              } left. Start your prep routine and stay hydrated.`}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Route Preview (if available) */}
-                                                    {/* {race.routes?.name && (
+                                                {/* Route Preview (if available) */}
+                                                {/* {race.routes?.name && (
                                                 <div className="mb-6 p-3 bg-gray-50 rounded-lg border border-gray-200">
                                                     <div className="flex items-center gap-2">
                                                         <MapPin className="w-4 h-4 text-cyan-600" />
@@ -817,22 +816,44 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                 </div>
                                             )} */}
 
-                                                    {/* Actions */}
-                                                    <div className="flex gap-2">
-                                                        <button className="flex-1 py-3 bg-gradient-to-r from-cyan-600 to-green-600 text-white rounded-lg font-heading text-base hover:shadow-xl transition-all flex items-center justify-center gap-2">
-                                                            <Eye className="w-5 h-5" />
-                                                            VIEW DETAILS
-                                                        </button>
-                                                        {/* {isUrgent && (
+                                                {/* Actions */}
+                                                <div className="flex gap-2">
+                                                    <div className="w-full block">
+                                                        <Link
+                                                            to={`/dashboard/races/${race.id}`}
+                                                            className="block w-full"
+                                                        >
+                                                            <button className="flex-1 py-3 bg-gradient-to-r from-cyan-600 to-green-600 text-white rounded-lg font-heading text-base hover:shadow-xl transition-all flex items-center justify-center gap-2 w-full">
+                                                                <Eye className="w-5 h-5" />
+                                                                VIEW DETAILS
+                                                            </button>
+                                                        </Link>
+                                                    </div>
+                                                    {isMe && (
+                                                        <div className="w-full block">
+                                                            <Link
+                                                                to={`/dashboard/races/${race.id}/run`}
+                                                                className="block w-full"
+                                                            >
+                                                                <button className="flex-1 py-3 bg-gradient-to-r from-cyan-600 to-green-600 text-white rounded-lg font-heading text-base hover:shadow-xl transition-all flex items-center justify-center gap-2 w-full">
+                                                                    {/* < className="w-5 h-5" /> */}
+                                                                    {/* shoe or run icon */}
+                                                                    <Play className="w-5 h-5" />
+                                                                    Go Run
+                                                                </button>
+                                                            </Link>
+                                                        </div>
+                                                    )}
+                                                    {/* {isUrgent && (
                                                     <button className="flex-1 py-3 border-2 border-orange-500 text-orange-700 bg-orange-50 rounded-lg font-heading text-base hover:bg-orange-100 transition-all flex items-center justify-center gap-2">
                                                         <MapPin className="w-5 h-5" />
                                                         GET DIRECTIONS
                                                     </button>
                                                 )} */}
-                                                    </div>
+                                                </div>
 
-                                                    {/* Quick Actions */}
-                                                    {/* <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                                                {/* Quick Actions */}
+                                                {/* <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
                                                 <button className="text-sm text-zinc-600 hover:text-cyan-600 font-medium flex items-center gap-1 transition-colors">
                                                     <Share2 className="w-4 h-4" />
                                                     Share
@@ -846,9 +867,8 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                     Add to Calendar
                                                 </button>
                                             </div> */}
-                                                </div>
                                             </div>
-                                        </Link>
+                                        </div>
                                     </div>
                                 )
                             })}

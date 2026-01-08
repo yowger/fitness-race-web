@@ -20,6 +20,7 @@ import DashboardPage from "./features/dashboard/pages/DashboardPage"
 import RacesOngoingPage from "./features/races/pages/RacesOngoingPage"
 import RacesCompletePage from "./features/races/pages/RacesCompletePage"
 import ProfilePage from "./features/profile/pages/ProfilePage"
+import RacesRun from "./features/races/pages/RacesRun"
 
 const router = createBrowserRouter([
     {
@@ -93,6 +94,10 @@ const router = createBrowserRouter([
                                     {
                                         path: ":id/complete",
                                         element: <RacesCompletePage />,
+                                    },
+                                    {
+                                        path: ":id/run",
+                                        element: <RacesRun />,
                                     },
                                 ],
                             },
