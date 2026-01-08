@@ -16,3 +16,22 @@ export const getBoundsFromCoords = (coords: [number, number][]) => {
         [maxLng, maxLat],
     ] as [[number, number], [number, number]]
 }
+
+export function clampToBounds(
+    map: maplibregl.Map,
+    lng: number,
+    lat: number,
+    padding = 24
+): [number, number] {
+    const canvas = map.getCanvas()
+    const width = canvas.width
+    const height = canvas.height
+
+    const point = map.project([lng, lat])
+
+    const clampedX = Math.min(Math.max(point.x, padding), width - padding)
+
+    const clampedY = Math.min(Math.max(point.y, padding), height - padding)
+
+    return map.unproject([clampedX, clampedY]).toArray()
+}
