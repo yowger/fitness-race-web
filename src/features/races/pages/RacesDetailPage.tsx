@@ -616,12 +616,31 @@ export default function RaceDetailPage() {
                                 </div>
                             </div>
 
-                            {isHost && (
+                            {(isHost && race?.status === "upcoming") ||
+                                (race?.status === "ongoing" && (
+                                    <Link
+                                        to={`/dashboard/races/${race?.id}/live`}
+                                        className="block w-full mb-4 py-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-white font-heading text-2xl rounded-lg text-center hover:shadow-2xl hover:shadow-orange-400 transition-all"
+                                    >
+                                        GO LIVE
+                                    </Link>
+                                ))}
+
+                            {isHost && race?.status === "finished" && (
                                 <Link
-                                    to={`/dashboard/races/${race?.id}/live`}
+                                    to={`/dashboard/races/${race?.id}/results`}
                                     className="block w-full mb-4 py-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-white font-heading text-2xl rounded-lg text-center hover:shadow-2xl hover:shadow-orange-400 transition-all"
                                 >
-                                    GO LIVE
+                                    EDIT RESULTS
+                                </Link>
+                            )}
+
+                            {isHost && race?.status === "complete" && (
+                                <Link
+                                    to={`/dashboard/races/${race?.id}/complete`}
+                                    className="block w-full mb-4 py-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-white font-heading text-2xl rounded-lg text-center hover:shadow-2xl hover:shadow-orange-400 transition-all"
+                                >
+                                    SEE RESULTS
                                 </Link>
                             )}
 
