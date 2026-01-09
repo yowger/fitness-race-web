@@ -21,6 +21,9 @@ import RacesOngoingPage from "./features/races/pages/RacesOngoingPage"
 import RacesCompletePage from "./features/races/pages/RacesCompletePage"
 import ProfilePage from "./features/profile/pages/ProfilePage"
 import RacesRun from "./features/races/pages/RacesRun"
+import SoloDashboardPage from "./features/solo/pages/SoloDashboardPage"
+import SoloRunPage from "./features/solo/pages/SoloRunPage"
+import SoloResultsPage from "./features/solo/pages/SoloResultsPage"
 
 const router = createBrowserRouter([
     {
@@ -98,6 +101,23 @@ const router = createBrowserRouter([
                                     {
                                         path: ":id/run",
                                         element: <RacesRun />,
+                                    },
+                                ],
+                            },
+                            {
+                                path: "solo",
+                                children: [
+                                    {
+                                        index: true,
+                                        element: <SoloDashboardPage />,
+                                    },
+                                    {
+                                        path: "run",
+                                        element: <SoloRunPage />,
+                                    },
+                                    {
+                                        path: ":id/results",
+                                        element: <SoloResultsPage />,
                                     },
                                 ],
                             },
