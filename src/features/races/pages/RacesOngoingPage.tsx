@@ -252,6 +252,7 @@ export default function AdminRaceTracking() {
         socket.on(
             "participantUpdate",
             (update: {
+                
                 userId: string
                 coords: [number, number]
                 timestamp: number
@@ -585,35 +586,32 @@ export default function AdminRaceTracking() {
                                                 </div>
                                             </Marker>
 
-                                            {Object.entries(racerPositions).map(
-                                                ([userId, data]) => {
-                                                    const participant =
-                                                        liveRace?.participants?.find(
-                                                            (p) =>
-                                                                p.user.id ===
-                                                                userId
-                                                        )
-                                                    const bibNumber =
-                                                        participant?.bib_number ||
-                                                        "?"
+                                            {liveRace?.participants?.map(
+                                                (p) => {
+                                                    const update =
+                                                        racerPositions[
+                                                            p.user.id
+                                                        ]
+                                                    if (!update?.coords)
+                                                        return null // no GPS yet
 
                                                     return (
                                                         <Marker
-                                                            key={userId}
+                                                            key={p.user.id}
                                                             longitude={
-                                                                data.coords[0]
+                                                                update.coords[0]
                                                             }
                                                             latitude={
-                                                                data.coords[1]
+                                                                update.coords[1]
                                                             }
                                                             anchor="center"
                                                         >
                                                             <div
                                                                 className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg ${getMarkerColor(
-                                                                    userId
+                                                                    p.user.id
                                                                 )}`}
                                                             >
-                                                                {bibNumber}
+                                                                {p.bib_number}
                                                             </div>
                                                         </Marker>
                                                     )
