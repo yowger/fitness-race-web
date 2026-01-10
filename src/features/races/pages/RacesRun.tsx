@@ -30,7 +30,7 @@ type ParticipantState = {
     coords: [number, number]
     speed: number
     timestamp: number
-    name?: string
+    distance: number
 }
 
 export default function RacesRun() {
