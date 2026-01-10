@@ -586,26 +586,38 @@ export default function AdminRaceTracking() {
                                             </Marker>
 
                                             {Object.entries(racerPositions).map(
-                                                ([userId, data]) => (
-                                                    <Marker
-                                                        key={userId}
-                                                        longitude={
-                                                            data.coords[0]
-                                                        }
-                                                        latitude={
-                                                            data.coords[1]
-                                                        }
-                                                        anchor="center"
-                                                    >
-                                                        <div
-                                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg ${getMarkerColor(
+                                                ([userId, data]) => {
+                                                    const participant =
+                                                        liveRace?.participants?.find(
+                                                            (p) =>
+                                                                p.user.id ===
                                                                 userId
-                                                            )}`}
+                                                        )
+                                                    const bibNumber =
+                                                        participant?.bib_number ||
+                                                        "?"
+
+                                                    return (
+                                                        <Marker
+                                                            key={userId}
+                                                            longitude={
+                                                                data.coords[0]
+                                                            }
+                                                            latitude={
+                                                                data.coords[1]
+                                                            }
+                                                            anchor="center"
                                                         >
-                                                            {userId.slice(-2)}
-                                                        </div>
-                                                    </Marker>
-                                                )
+                                                            <div
+                                                                className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg ${getMarkerColor(
+                                                                    userId
+                                                                )}`}
+                                                            >
+                                                                {bibNumber}
+                                                            </div>
+                                                        </Marker>
+                                                    )
+                                                }
                                             )}
                                         </Map>
                                     </div>
