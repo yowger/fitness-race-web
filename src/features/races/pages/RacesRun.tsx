@@ -14,6 +14,7 @@ import {
     Target,
 } from "lucide-react"
 import { getBoundsFromCoords } from "../../../lib/geo"
+import { useUser } from "../../auth/hooks/useUser"
 
 const SOCKET_URL = import.meta.env.VITE_PUBLIC_SOCKET_URL
 
@@ -33,6 +34,7 @@ type ParticipantState = {
 }
 
 export default function RacesRun() {
+    const { data: user } = useUser()
     const { id: raceId } = useParams()
     const { data: race } = useRace(raceId!)
     const socketRef = useRef<Socket | null>(null)
@@ -137,6 +139,7 @@ export default function RacesRun() {
 
                 socketRef.current?.emit("participantUpdate", {
                     raceId,
+                    userId: user?.id ?? "",
                     coords: [longitude, latitude],
                     speed: speed ?? 0,
                     timestamp: Date.now(),

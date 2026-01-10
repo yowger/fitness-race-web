@@ -590,7 +590,7 @@ export default function AdminRaceTracking() {
                                                     const participant =
                                                         liveRace?.participants?.find(
                                                             (p) =>
-                                                                p.id ===
+                                                                p.user.id ===
                                                                 userId
                                                         )
                                                     const bibNumber =
