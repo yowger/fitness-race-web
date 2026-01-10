@@ -42,6 +42,7 @@ export default function RaceDetailPage() {
     const { data: user } = useUser()
     const { id } = useParams()
     const { data: race, refetch: refetchRace } = useRace(id!)
+    console.log("🚀 ~ RaceDetailPage ~ race:", race)
 
     const { data: raceEvent } = useRaceEvent(id!)
 
@@ -83,7 +84,8 @@ export default function RaceDetailPage() {
     } as const
 
     const [isJoining, setIsJoining] = useState(false)
-    const isHost = race?.created_by_user?.id === user?.id
+    const isHost = race?.created_by === user?.id
+    console.log("🚀 ~ RaceDetailPage ~ isHost:", isHost)
     const hasJoined = race?.participants?.some((p) => p.user.id === user?.id)
 
     const addParticipantMutation = useAddParticipant()
@@ -616,15 +618,16 @@ export default function RaceDetailPage() {
                                 </div>
                             </div>
 
-                            {(isHost && race?.status === "upcoming") ||
-                                (race?.status === "ongoing" && (
+                            {isHost &&
+                                (race?.status === "upcoming" ||
+                                    race?.status === "ongoing") && (
                                     <Link
                                         to={`/dashboard/races/${race?.id}/live`}
                                         className="block w-full mb-4 py-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-white font-heading text-2xl rounded-lg text-center hover:shadow-2xl hover:shadow-orange-400 transition-all"
                                     >
                                         GO LIVE
                                     </Link>
-                                ))}
+                                )}
 
                             {isHost && race?.status === "finished" && (
                                 <Link
