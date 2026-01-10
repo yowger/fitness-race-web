@@ -95,6 +95,7 @@ export default function AdminRaceTracking() {
     const [racerPositions, setRacerPositions] = useState<
         Record<string, RacerPosition>
     >({})
+    console.log("🚀 ~ AdminRaceTracking ~ racerPositions:", racerPositions)
 
     const coords =
         liveRace?.routes?.geojson.features?.[0]?.geometry?.coordinates ?? []
@@ -252,13 +253,13 @@ export default function AdminRaceTracking() {
         socket.on(
             "participantUpdate",
             (update: {
-                
                 userId: string
                 coords: [number, number]
                 timestamp: number
                 speed?: number
                 distance?: number
             }) => {
+                console.log("🚀 ~ AdminRaceTracking ~ update:", update)
                 setRacerPositions((prev) => ({
                     ...prev,
                     [update.userId]: {
@@ -586,32 +587,39 @@ export default function AdminRaceTracking() {
                                                 </div>
                                             </Marker>
 
-                                            {liveRace?.participants?.map(
-                                                (p) => {
-                                                    const update =
-                                                        racerPositions[
-                                                            p.user.id
-                                                        ]
-                                                    if (!update?.coords)
-                                                        return null // no GPS yet
+                                            {Object.entries(racerPositions).map(
+                                                ([userId, data]) => {
+                                                    const participant =
+                                                        liveRace?.participants?.find(
+                                                            (p) =>
+                                                                p.user.id ===
+                                                                userId
+                                                        )
+                                                    const bibNumber =
+                                                        participant?.bib_number ||
+                                                        "?"
 
+                                                    console.log(
+                                                        "🚀 ~ AdminRaceTracking ~ participant:",
+                                                        participant
+                                                    )
                                                     return (
                                                         <Marker
-                                                            key={p.user.id}
+                                                            key={userId}
                                                             longitude={
-                                                                update.coords[0]
+                                                                data.coords[0]
                                                             }
                                                             latitude={
-                                                                update.coords[1]
+                                                                data.coords[1]
                                                             }
                                                             anchor="center"
                                                         >
                                                             <div
                                                                 className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg ${getMarkerColor(
-                                                                    p.user.id
+                                                                    userId
                                                                 )}`}
                                                             >
-                                                                {p.bib_number}
+                                                                {bibNumber}
                                                             </div>
                                                         </Marker>
                                                     )

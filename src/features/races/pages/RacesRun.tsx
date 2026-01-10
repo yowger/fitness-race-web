@@ -95,7 +95,7 @@ export default function RacesRun() {
         const s = io(SOCKET_URL)
         socketRef.current = s
 
-        s.emit("joinRace", { raceId })
+        s.emit("joinRace", { raceId, userId: user?.id })
 
         // Listen for other participants
         s.on("participantUpdate", (data: ParticipantState[]) => {
@@ -106,7 +106,7 @@ export default function RacesRun() {
             s.emit("leaveRace", { raceId })
             s.disconnect()
         }
-    }, [raceId])
+    }, [raceId, user?.id])
 
     useEffect(() => {
         if (!navigator.geolocation) return
