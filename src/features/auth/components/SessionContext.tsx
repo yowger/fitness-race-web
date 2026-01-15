@@ -1,18 +1,20 @@
 import { createContext, useEffect, useState } from "react"
 import { type Session } from "@supabase/supabase-js"
 import { supabase } from "../../../lib/supabase"
-import { useUser, type UserResponse } from "../hooks/useUser"
+import { useUser, type UserResponse, type UserRole } from "../hooks/useUser"
 
 interface SessionContextType {
     session: Session | null
     user: UserResponse | null
     isLoading: boolean
+    role?: UserRole 
 }
 
 const SessionContext = createContext<SessionContextType>({
     session: null,
     user: null,
     isLoading: true,
+    role: "",
 })
 
 type Props = { children: React.ReactNode }
@@ -37,7 +39,7 @@ export const SessionProvider = ({ children }: Props) => {
 
     return (
         <SessionContext.Provider
-            value={{ session, user: user || null, isLoading }}
+            value={{ session, user: user || null, isLoading, role: user?.role }}
         >
             {isLoading ? <p>Loading...</p> : children}
         </SessionContext.Provider>

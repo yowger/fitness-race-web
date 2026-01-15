@@ -2,10 +2,13 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 
 import { api, privateApi } from "../../../lib/axios"
 
+export type UserRole = "admin" | "organizer" | "user" | ""
+
 export interface UserResponse {
     id: string
     email: string
     full_name: string
+    role?: UserRole
     username?: string
     avatar_url?: string
     created_at?: string
