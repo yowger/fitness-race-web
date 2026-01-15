@@ -529,6 +529,9 @@ export const useApproveRace = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["races"] })
             queryClient.invalidateQueries({ queryKey: ["races", "pending"] })
+            queryClient.invalidateQueries({
+                queryKey: ["races", "admin-stats"],
+            })
         },
     })
 }
@@ -541,6 +544,9 @@ export const useRejectRace = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["races"] })
             queryClient.invalidateQueries({ queryKey: ["races", "pending"] })
+            queryClient.invalidateQueries({
+                queryKey: ["races", "admin-stats"],
+            })
         },
     })
 }
