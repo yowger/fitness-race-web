@@ -24,6 +24,9 @@ import RacesRun from "./features/races/pages/RacesRun"
 import SoloDashboardPage from "./features/solo/pages/SoloDashboardPage"
 import SoloRunPage from "./features/solo/pages/SoloRunPage"
 import SoloResultsPage from "./features/solo/pages/SoloResultsPage"
+import PendingRacesPage from "./features/admin/pages/PendingRacesPage"
+import AdminStatsPage from "./features/admin/pages/AdminStatsPage"
+import AdminProfilePage from "./features/admin/pages/AdminProfilePage"
 
 const router = createBrowserRouter([
     {
@@ -33,6 +36,22 @@ const router = createBrowserRouter([
             {
                 index: true,
                 element: <RunningLandingPage />,
+            },
+            {
+                path: "/admin",
+                element: <AuthRouteGuard />,
+                children: [
+                    // { index: true, element: <PendingRacesPage /> },
+                    // { path: "races/pending", element: <PendingRacesPage /> },
+                    // { path: "races/rejected", element: <RejectedRacesPage /> },
+                    // { path: "races/approved", element: <ApprovedRacesPage /> },
+                    // { path: "stats", element: <AdminStatsPage /> },
+                    // { path: "profile", element: <AdminProfilePage /> },
+
+                    { index: true, element: <PendingRacesPage /> },
+                    { path: "stats", element: <AdminStatsPage /> },
+                    { path: "profile", element: <AdminProfilePage /> },
+                ],
             },
             {
                 element: <AuthGuestRoute />,

@@ -18,6 +18,10 @@ const AuthRouteGuard = () => {
         )
     }
 
+    if (user.role === "admin") {
+        return <Navigate to="/admin/dashboard" replace />
+    }
+
     return <Outlet />
 }
 
