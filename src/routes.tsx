@@ -38,7 +38,6 @@ const router = createBrowserRouter([
                 element: <RunningLandingPage />,
             },
             {
-                path: "/admin",
                 element: <AuthRouteGuard />,
                 children: [
                     // { index: true, element: <PendingRacesPage /> },
@@ -47,10 +46,14 @@ const router = createBrowserRouter([
                     // { path: "races/approved", element: <ApprovedRacesPage /> },
                     // { path: "stats", element: <AdminStatsPage /> },
                     // { path: "profile", element: <AdminProfilePage /> },
-
-                    { index: true, element: <PendingRacesPage /> },
-                    { path: "stats", element: <AdminStatsPage /> },
-                    { path: "profile", element: <AdminProfilePage /> },
+                    {
+                        path: "/admin",
+                        children: [
+                            { index: true, element: <PendingRacesPage /> },
+                            { path: "stats", element: <AdminStatsPage /> },
+                            { path: "profile", element: <AdminProfilePage /> },
+                        ],
+                    },
                 ],
             },
             {

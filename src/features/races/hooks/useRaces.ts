@@ -93,6 +93,7 @@ export interface RaceFilters {
     createdBy?: string
     name?: string
     status?: "upcoming" | "ongoing" | "finished" | "complete"
+    approvalStatus?: RaceApprovalStatus
     startDate?: string
     endDate?: string
     limit?: number
@@ -546,7 +547,46 @@ export const useRejectRace = () => {
 
 export const useMyRejectedRaces = () =>
     useQuery({
-        queryKey: ["races", "my-rejected"],
+        queryKey: ["races"],
         queryFn: getMyRejectedRaces,
+        staleTime: 1000 * 60,
+    })
+
+export interface AdminStats {
+    totalRaces: number
+    pendingRaces: number
+    approvedRaces: number
+    rejectedRaces: number
+    totalParticipants: number
+    upcomingRaces: number
+    ongoingRaces: number
+    finishedRaces: number
+    completedRaces: number
+    raceWithMostParticipants?: {
+        id: string
+        name: string
+        participantsCount: number
+    } | null
+    recentApproved?: {
+        id: string
+        name: string
+        approved_at: string
+    }[]
+    recentRejected?: {
+        id: string
+        name: string
+        rejected_at: string
+    }[]
+}
+
+export const getAdminStats = async (): Promise<AdminStats> => {
+    const res = await privateApi.get("/api/group-races/admin/stats")
+    return res.data
+}
+
+export const useAdminStats = () =>
+    useQuery({
+        queryKey: ["admin-stats"],
+        queryFn: getAdminStats,
         staleTime: 1000 * 60,
     })

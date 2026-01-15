@@ -33,7 +33,7 @@ const SignInPage = () => {
             alert(error.message)
         } else if (data.session) {
             if (data.user.role === "admin") {
-                navigate("/admin/dashboard", { replace: true })
+                navigate("/admin", { replace: true })
                 return
             }
 
