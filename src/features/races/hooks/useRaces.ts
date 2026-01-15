@@ -10,6 +10,9 @@ export interface UserInfo {
     avatar_url?: string
 }
 
+export type RaceApprovalStatus = "pending" | "approved" | "rejected"
+export type GroupRaceStatus = "upcoming" | "ongoing" | "finished" | "complete"
+
 export interface Race {
     id: string
     name: string
@@ -23,7 +26,14 @@ export interface Race {
     banner_url?: string
     route_id?: string
     created_by?: string
-    status: string
+
+    status: GroupRaceStatus
+    approval_status: RaceApprovalStatus
+
+    approved_by?: string | null
+    approved_at?: string | null
+    rejection_reason?: string | null
+
     created_at?: string
     updated_at?: string
     routes?: RouteResponse
@@ -405,8 +415,6 @@ export interface RaceResultResponse {
     }
 }
 
-type GroupRaceStatus = "upcoming" | "ongoing" | "finished" | "complete"
-
 export interface RunnerResultsPaginatedParams {
     userId: string
     status?: GroupRaceStatus
@@ -476,4 +484,69 @@ export const useRunnerProfileStats = (userId?: string) =>
         queryFn: () => getRunnerProfileStats(userId!),
         enabled: !!userId,
         staleTime: 1000 * 60 * 5,
+    })
+
+// admin
+
+export const getPendingRaces = async (): Promise<Race[]> => {
+    const res = await privateApi.get("/api/group-races/pending")
+    return res.data
+}
+
+export const approveRace = async (raceId: string) => {
+    const res = await privateApi.post("/api/group-races/approve", {
+        race_id: raceId,
+    })
+    return res.data
+}
+
+export const rejectRace = async (input: {
+    race_id: string
+    reason?: string
+}) => {
+    const res = await privateApi.post("/api/group-races/reject", input)
+    return res.data
+}
+
+export const getMyRejectedRaces = async (): Promise<Race[]> => {
+    const res = await privateApi.get("/api/group-races/my/rejected")
+    return res.data
+}
+
+export const usePendingRaces = () =>
+    useQuery({
+        queryKey: ["races", "pending"],
+        queryFn: getPendingRaces,
+        staleTime: 1000 * 60,
+    })
+
+export const useApproveRace = () => {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: approveRace,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["races"] })
+            queryClient.invalidateQueries({ queryKey: ["races", "pending"] })
+        },
+    })
+}
+
+export const useRejectRace = () => {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: rejectRace,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["races"] })
+            queryClient.invalidateQueries({ queryKey: ["races", "pending"] })
+        },
+    })
+}
+
+export const useMyRejectedRaces = () =>
+    useQuery({
+        queryKey: ["races", "my-rejected"],
+        queryFn: getMyRejectedRaces,
+        staleTime: 1000 * 60,
     })
