@@ -34,7 +34,7 @@ import { RichTextEditor } from "./RichTextEditor"
 const raceFormSchema = z.object({
     name: z.string().min(1, "Race name is required"),
     description: z.string().optional(),
-    price: z.number().nonnegative().optional(),
+    price: z.number().min(0, "Price must be 0 or more").optional(),
     bannerFile: z
         .any()
         .refine((file) => !file || file instanceof File, "Invalid file")
@@ -167,18 +167,35 @@ export function RaceForm({
                                                 <Input
                                                     type="number"
                                                     min={0}
-                                                    step="1.00"
+                                                    step="0.01"
                                                     placeholder="0.00"
                                                     className="h-12 pl-10 text-base border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md"
-                                                    {...field}
-                                                    onChange={(e) =>
+                                                    value={field.value ?? ""}
+                                                    onChange={(e) => {
+                                                        const value =
+                                                            e.target.value
                                                         field.onChange(
-                                                            parseInt(
-                                                                e.target.value,
-                                                                0
-                                                            )
+                                                            value === ""
+                                                                ? undefined
+                                                                : parseFloat(
+                                                                      value
+                                                                  )
                                                         )
-                                                    }
+                                                    }}
+                                                    onBlur={() => {
+                                                        if (
+                                                            typeof field.value ===
+                                                            "number"
+                                                        ) {
+                                                            field.onChange(
+                                                                Number(
+                                                                    field.value.toFixed(
+                                                                        2
+                                                                    )
+                                                                )
+                                                            )
+                                                        }
+                                                    }}
                                                 />
                                             </div>
                                         </FormControl>
