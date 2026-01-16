@@ -27,6 +27,7 @@ import SoloResultsPage from "./features/solo/pages/SoloResultsPage"
 import PendingRacesPage from "./features/admin/pages/PendingRacesPage"
 import AdminStatsPage from "./features/admin/pages/AdminStatsPage"
 import AdminProfilePage from "./features/admin/pages/AdminProfilePage"
+import PaymentRacePage from "./features/races/pages/PaymentRacePage"
 
 const router = createBrowserRouter([
     {
@@ -104,6 +105,10 @@ const router = createBrowserRouter([
                                     {
                                         path: ":id",
                                         element: <RacesDetailPage />,
+                                    },
+                                    {
+                                        path: "payment/:id",
+                                        element: <PaymentRacePage />,
                                     },
                                     // {
                                     //     path: ":id/ongoing",

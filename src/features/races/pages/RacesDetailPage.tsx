@@ -42,7 +42,6 @@ export default function RaceDetailPage() {
     const { data: user } = useUser()
     const { id } = useParams()
     const { data: race, refetch: refetchRace } = useRace(id!)
-    console.log("🚀 ~ RaceDetailPage ~ race:", race)
 
     const { data: raceEvent } = useRaceEvent(id!)
 
