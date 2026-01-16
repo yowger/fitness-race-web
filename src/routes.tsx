@@ -48,6 +48,7 @@ const router = createBrowserRouter([
                     // { path: "profile", element: <AdminProfilePage /> },
                     {
                         path: "/admin",
+                        element: <DashboardLayout />,
                         children: [
                             { index: true, element: <PendingRacesPage /> },
                             { path: "stats", element: <AdminStatsPage /> },

@@ -1,4 +1,4 @@
-import { Home, Map, Footprints } from "lucide-react"
+import { Home, Map, Footprints, BarChartIcon } from "lucide-react"
 
 import {
     Sidebar,
@@ -11,32 +11,68 @@ import {
     SidebarMenuItem,
 } from "../../../components/ui/sidebar"
 import { Link, useLocation } from "react-router-dom"
+import type { UserRole } from "../../auth/hooks/useUser"
 
-const items = [
-    {
-        title: "Overview",
-        url: "/dashboard",
-        icon: Home,
-    },
-    // {
-    //     title: "Profile",
-    //     url: "/dashboard/profile",
-    //     icon: User,
-    // },
-    {
-        title: "Races",
-        url: "/dashboard/races",
-        icon: Footprints,
-    },
-    {
-        title: "Routes",
-        url: "/dashboard/routes",
-        icon: Map,
-    },
-]
+const menu = {
+    runner: [
+        {
+            title: "Overview",
+            url: "/dashboard",
+            icon: Home,
+        },
+        // {
+        //     title: "Profile",
+        //     url: "/dashboard/profile",
+        //     icon: User,
+        // },
+        {
+            title: "Races",
+            url: "/dashboard/races",
+            icon: Footprints,
+        },
+        {
+            title: "Routes",
+            url: "/dashboard/routes",
+            icon: Map,
+        },
+    ],
+    admin: [
+        {
+            title: "Overview",
+            url: "/admin",
+            icon: Home,
+        },
+        {
+            title: "Stats",
+            url: "/admin/stats",
+            icon: BarChartIcon,
+        },
+        {
+            title: "Races",
+            url: "/dashboard/races",
+            icon: Footprints,
+        },
+        {
+            title: "Routes",
+            url: "/dashboard/routes",
+            icon: Map,
+        },
+    ],
+}
 
-export function AppSidebar() {
+interface AppSidebarProps {
+    role?: UserRole
+}
+
+export function AppSidebar({ role }: AppSidebarProps) {
     const location = useLocation()
+    let menuItems = []
+
+    if (role === "admin") {
+        menuItems = menu.admin
+    } else {
+        menuItems = menu.runner
+    }
 
     return (
         <Sidebar>
@@ -45,7 +81,7 @@ export function AppSidebar() {
                     <SidebarGroupLabel>Application</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {items.map((item) => {
+                            {menuItems.map((item) => {
                                 const currentPathname =
                                     location.pathname === item.url
 

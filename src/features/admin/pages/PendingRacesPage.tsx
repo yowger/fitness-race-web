@@ -7,6 +7,7 @@ import {
     type Race,
     type RaceApprovalStatus,
 } from "../../races/hooks/useRaces"
+import { Link } from "react-router-dom"
 
 export default function RacesApprovalPage() {
     const [approvalStatus, setApprovalStatus] =
@@ -259,17 +260,22 @@ export default function RacesApprovalPage() {
                                             className="hover:bg-gray-50 transition-colors"
                                         >
                                             <td className="px-6 py-4">
-                                                <div>
-                                                    <p className="font-bold text-gray-900">
-                                                        {race.name}
-                                                    </p>
-                                                    {race.price &&
-                                                        race.price > 0 && (
-                                                            <span className="inline-block mt-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-bold rounded">
-                                                                ₱{race.price}
-                                                            </span>
-                                                        )}
-                                                </div>
+                                                <Link
+                                                    to={`/dashboard/races/${race.id}`}
+                                                >
+                                                    <div className="hover:underline">
+                                                        <p className="font-bold text-gray-900">
+                                                            {race.name}
+                                                        </p>
+                                                        {race.price &&
+                                                            race.price > 0 && (
+                                                                <span className="inline-block mt-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-bold rounded">
+                                                                    ₱
+                                                                    {race.price}
+                                                                </span>
+                                                            )}
+                                                    </div>
+                                                </Link>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">

@@ -24,6 +24,7 @@ export default function RacesPage() {
 
     const { data: races, isLoading } = useRaces({
         status: statusFilter === "all" ? undefined : statusFilter,
+        approvalStatus: "approved",
         name: searchTerm || undefined,
     })
 

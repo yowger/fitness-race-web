@@ -34,7 +34,7 @@ const DashboardLayout = () => {
     return (
         <div className="flex min-h-screen">
             <SidebarProvider defaultOpen={defaultOpen}>
-                <AppSidebar />
+                <AppSidebar role={user?.role} />
 
                 <div className="flex flex-1 flex-col">
                     <AppHeader
