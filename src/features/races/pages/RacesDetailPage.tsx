@@ -1,10 +1,10 @@
 import { useState } from "react"
 import { Calendar, Clock, Flag, MapPin, Play, Users } from "lucide-react"
-import { Link, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import {
     useAddParticipant,
     useRace,
-    useRemoveParticipant,
+    // useRemoveParticipant,
 } from "../hooks/useRaces"
 import { format } from "date-fns"
 import DOMPurify from "dompurify"
@@ -41,6 +41,7 @@ export default function RaceDetailPage() {
     const socket = io(SOCKET_URL)
     const { data: user } = useUser()
     const { id } = useParams()
+
     const { data: race, refetch: refetchRace } = useRace(id!)
 
     const { data: raceEvent } = useRaceEvent(id!)
@@ -88,10 +89,15 @@ export default function RaceDetailPage() {
     const hasJoined = race?.participants?.some((p) => p.user.id === user?.id)
 
     const addParticipantMutation = useAddParticipant()
-    const removeParticipantMutation = useRemoveParticipant()
+    // const removeParticipantMutation = useRemoveParticipant()
+    const navigate = useNavigate()
 
     const handleJoinRace = async () => {
         if (!race || !user) return
+
+        if (race.price && race.price > 0) {
+            navigate(`/races/payment/${race?.id}`)
+        }
 
         setIsJoining(true)
 
@@ -114,23 +120,23 @@ export default function RaceDetailPage() {
         }
     }
 
-    const handleLeaveRace = async () => {
-        if (!race || !user) return
+    // const handleLeaveRace = async () => {
+    //     if (!race || !user) return
 
-        try {
-            await removeParticipantMutation.mutateAsync({
-                race_id: race.id,
-                user_id: user.id,
-            })
+    //     try {
+    //         await removeParticipantMutation.mutateAsync({
+    //             race_id: race.id,
+    //             user_id: user.id,
+    //         })
 
-            refetchRace()
-            socket.emit("leaveRace", { raceId: race.id, userId: user.id })
+    //         refetchRace()
+    //         socket.emit("leaveRace", { raceId: race.id, userId: user.id })
 
-            toast.success("You left the race")
-        } catch (err) {
-            if (err instanceof Error) toast.error(err.message)
-        }
-    }
+    //         toast.success("You left the race")
+    //     } catch (err) {
+    //         if (err instanceof Error) toast.error(err.message)
+    //     }
+    // }
 
     return (
         <div className="min-h-screen bg-white text-gray-900">
@@ -407,46 +413,52 @@ export default function RaceDetailPage() {
                                     ></div>
                                 )}
 
-                                <Link
-                                    to={`/dashboard/profile/${race?.created_by_user.id}`}
-                                >
-                                    <div className="mt-8 p-6 bg-gray-50 border border-gray-300 rounded-lg">
-                                        <div className="flex items-start gap-4">
-                                            <img
-                                                src={getAvatarUrl(
-                                                    race?.created_by_user
-                                                        .full_name || "",
-                                                    {
-                                                        size: 64,
-                                                        rounded: false,
-                                                    }
-                                                )}
-                                                alt={
-                                                    race?.created_by_user
-                                                        .full_name
-                                                }
-                                                className="w-16 h-16 rounded-full"
-                                            />
-                                            <div>
-                                                <h3 className="flex font-heading items-center gap-2 text-2xl text-gray-900 mb-1 hover:text-cyan-600">
-                                                    {
+                                {race?.created_by_user.id && (
+                                    <Link
+                                        to={`/dashboard/profile/${
+                                            race?.created_by_user.id || ""
+                                        }`}
+                                    >
+                                        <div className="mt-8 p-6 bg-gray-50 border border-gray-300 rounded-lg">
+                                            <div className="flex items-start gap-4">
+                                                <img
+                                                    src={getAvatarUrl(
+                                                        race?.created_by_user
+                                                            .full_name || "",
+                                                        {
+                                                            size: 64,
+                                                            rounded: false,
+                                                        }
+                                                    )}
+                                                    alt={
                                                         race?.created_by_user
                                                             .full_name
                                                     }
+                                                    className="w-16 h-16 rounded-full"
+                                                />
+                                                <div>
+                                                    <h3 className="flex font-heading items-center gap-2 text-2xl text-gray-900 mb-1 hover:text-cyan-600">
+                                                        {
+                                                            race
+                                                                ?.created_by_user
+                                                                .full_name
+                                                        }
 
-                                                    {isHost && (
-                                                        <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
-                                                            Host
-                                                        </span>
-                                                    )}
-                                                </h3>
-                                                <p className="font-body text-gray-600">
-                                                    Promoting health and fitness
-                                                </p>
+                                                        {isHost && (
+                                                            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                                                                Host
+                                                            </span>
+                                                        )}
+                                                    </h3>
+                                                    <p className="font-body text-gray-600">
+                                                        Promoting health and
+                                                        fitness
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </Link>
+                                    </Link>
+                                )}
                             </div>
                         )}
 
@@ -618,6 +630,7 @@ export default function RaceDetailPage() {
                             </div>
 
                             {isHost &&
+                                race &&
                                 (race?.status === "upcoming" ||
                                     race?.status === "ongoing") && (
                                     <Link
@@ -649,17 +662,20 @@ export default function RaceDetailPage() {
                             {!isHost && (
                                 <>
                                     {hasJoined ? (
-                                        <button
-                                            onClick={handleLeaveRace}
-                                            disabled={
-                                                removeParticipantMutation.isPending
-                                            }
-                                            className="w-full py-4 bg-gray-700 text-white font-heading text-2xl rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            {removeParticipantMutation.isPending
-                                                ? "Leaving..."
-                                                : "Leave Race"}
-                                        </button>
+                                        // <button
+                                        //     onClick={handleLeaveRace}
+                                        //     disabled={
+                                        //         removeParticipantMutation.isPending
+                                        //     }
+                                        //     className="w-full py-4 bg-gray-700 text-white font-heading text-2xl rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        // >
+                                        //     {removeParticipantMutation.isPending
+                                        //         ? "Leaving..."
+                                        //         : "Leave Race"}
+                                        // </button>
+                                        <div className="text justify-center text-center">
+                                            Already registered.
+                                        </div>
                                     ) : (
                                         <button
                                             onClick={handleJoinRace}
@@ -675,8 +691,16 @@ export default function RaceDetailPage() {
                     }
                 `}
                                         >
+                                            {/* {isJoining
+                                                ? "Registering..."
+                                                : "REGISTER NOW"} */}
+
                                             {isJoining
                                                 ? "Registering..."
+                                                : race?.price && race.price > 0
+                                                ? `PAY ₱${race.price.toFixed(
+                                                      2
+                                                  )}`
                                                 : "REGISTER NOW"}
                                         </button>
                                     )}
