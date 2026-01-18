@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom"
 import {
     useAddParticipant,
     useRace,
+    useRaceRevenue,
     // useRemoveParticipant,
 } from "../hooks/useRaces"
 import { format } from "date-fns"
@@ -42,6 +43,8 @@ export default function RaceDetailPage() {
     const { data: user } = useUser()
     const { id } = useParams()
 
+    const { data: raceRevenue } = useRaceRevenue(id!)
+    console.log("🚀 ~ RaceDetailPage ~ raceRevenue:", raceRevenue)
     const { data: race, refetch: refetchRace } = useRace(id!)
 
     const { data: raceEvent } = useRaceEvent(id!)
@@ -397,6 +400,19 @@ export default function RaceDetailPage() {
                                         PARTICIPANTS
                                     </button>
                                 )}
+
+                                {isHost && (
+                                    <button
+                                        onClick={() => setActiveTab("insights")}
+                                        className={`tab-button pb-4 ${
+                                            activeTab === "insights"
+                                                ? "active text-gray-900"
+                                                : "text-gray-400"
+                                        }`}
+                                    >
+                                        HOST INSIGHTS
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -617,6 +633,45 @@ export default function RaceDetailPage() {
 
                         {activeTab === "participants" && isHost && race && (
                             <RaceParticipantsTab race={race} />
+                        )}
+
+                        {activeTab === "insights" && isHost && raceRevenue && (
+                            <div className="fade-in space-y-6">
+                                <h2 className="font-display text-4xl text-gray-900">
+                                    Revenue Overview
+                                </h2>
+
+                                <div className="grid md:grid-cols-3 gap-6">
+                                    <div className="p-6 bg-gray-50 border rounded-lg">
+                                        <div className="text-sm text-gray-500">
+                                            Registration Fee
+                                        </div>
+                                        <div className="font-display text-3xl">
+                                            ₱
+                                            {raceRevenue.price.toLocaleString()}
+                                        </div>
+                                    </div>
+
+                                    <div className="p-6 bg-gray-50 border rounded-lg">
+                                        <div className="text-sm text-gray-500">
+                                            Participants
+                                        </div>
+                                        <div className="font-display text-3xl">
+                                            {raceRevenue.participantCount}
+                                        </div>
+                                    </div>
+
+                                    <div className="p-6 bg-gradient-to-br from-lime-green/20 to-electric-cyan/20 border-2 border-lime-green rounded-lg">
+                                        <div className="text-sm text-gray-600 uppercase tracking-wide">
+                                            Estimated Revenue
+                                        </div>
+                                        <div className="font-display text-4xl text-gray-900">
+                                            ₱
+                                            {raceRevenue.estimatedRevenue.toLocaleString()}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         )}
                     </div>
 

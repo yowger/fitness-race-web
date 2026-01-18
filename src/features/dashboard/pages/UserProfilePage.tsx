@@ -69,6 +69,7 @@ import {
     useRaces,
     useRunnerProfileStats,
     useRunnerResultsPaginated,
+    useTotalEstimatedRevenue,
 } from "../../races/hooks/useRaces"
 import { Link } from "react-router-dom"
 
@@ -87,6 +88,8 @@ export default function RunnerProfilePage({ id }: { id: string }) {
         createdBy: user?.id,
     })
     const { data: stats } = useRunnerProfileStats(user?.id)
+    const { data: totalRevenue } = useTotalEstimatedRevenue(user?.id)
+    console.log("🚀 ~ RunnerProfilePage ~ totalRevenue:", totalRevenue)
     const [activeTab, setActiveTab] = useState("overview")
 
     const isMe = me?.id === user?.id
@@ -135,13 +138,17 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                 <div className="fade-in bg-white rounded-2xl border-2 border-gray-200 shadow-xl p-8">
                     <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
                         <div className="relative">
-                            <img
-                                src={getAvatarUrl(user?.full_name || "", {
-                                    size: 64,
-                                })}
-                                alt={user?.full_name || ""}
-                                className="w-32 h-32 rounded-full border-4 border-white shadow-lg"
-                            />
+                            {getAvatarUrl(user?.full_name, {
+                                size: 64,
+                            }) && (
+                                <img
+                                    src={getAvatarUrl(user?.full_name, {
+                                        size: 64,
+                                    })}
+                                    alt={user?.full_name}
+                                    className="w-32 h-32 rounded-full border-4 border-white shadow-lg"
+                                />
+                            )}
                         </div>
 
                         <div className="flex-1">
@@ -245,6 +252,18 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                         >
                             HOSTED RACES
                         </button>
+                        {isMe && (
+                            <button
+                                onClick={() => setActiveTab("revenue")}
+                                className={`tab-button pb-4 ${
+                                    activeTab === "revenue"
+                                        ? "active text-zinc-900"
+                                        : "text-zinc-500"
+                                }`}
+                            >
+                                REVENUE
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -872,6 +891,85 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                     </div>
                                 )
                             })}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === "revenue" && (
+                    <div className="fade-in-delay-2 space-y-6">
+                        <div className="overflow-x-auto bg-white rounded-lg border-2 border-gray-200 shadow-sm p-4">
+                            <h2 className="font-display text-2xl mb-4">
+                                Revenue by Race
+                            </h2>
+                            <table className="min-w-full table-auto">
+                                <thead>
+                                    <tr className="bg-gray-100">
+                                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                                            Race
+                                        </th>
+                                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                                            Date
+                                        </th>
+                                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                                            Participants
+                                        </th>
+                                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                                            Price
+                                        </th>
+                                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                                            Revenue
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {totalRevenue?.map((race) => (
+                                        <tr
+                                            key={race.raceId}
+                                            className="border-b"
+                                        >
+                                            <td className="px-4 py-2">
+                                                {race.raceName}
+                                            </td>
+                                            <td className="px-4 py-2">
+                                                {new Date(
+                                                    race.startTime || ""
+                                                ).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-4 py-2">
+                                                {race.participantCount}
+                                            </td>
+                                            <td className="px-4 py-2">
+                                                ₱{race.price.toFixed(2)}
+                                            </td>
+                                            <td className="px-4 py-2">
+                                                ₱
+                                                {race.estimatedRevenue.toFixed(
+                                                    2
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    <tr className="font-bold">
+                                        <td
+                                            colSpan={4}
+                                            className="px-4 py-2 text-right"
+                                        >
+                                            Total
+                                        </td>
+                                        <td className="px-4 py-2">
+                                            ₱
+                                            {totalRevenue
+                                                ?.reduce(
+                                                    (acc, r) =>
+                                                        acc +
+                                                        r.estimatedRevenue,
+                                                    0
+                                                )
+                                                .toFixed(2)}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 )}

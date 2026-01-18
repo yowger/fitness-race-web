@@ -596,3 +596,45 @@ export const useAdminStats = () =>
         queryFn: getAdminStats,
         staleTime: 1000 * 60,
     })
+
+export interface RaceRevenue {
+    raceId: string
+    raceName: string
+    price: number
+    startTime: string
+    participantCount: number
+    estimatedRevenue: number
+}
+
+export type TotalRevenueResponse = RaceRevenue[]
+
+export const getRaceRevenue = async (raceId: string): Promise<RaceRevenue> => {
+    const res = await privateApi.get(`/api/group-races/${raceId}/revenue`)
+    return res.data
+}
+
+export const getTotalEstimatedRevenue = async (
+    userId?: string
+): Promise<TotalRevenueResponse> => {
+    const url = userId
+        ? `/api/group-races/revenue/total?userId=${userId}`
+        : "/api/group-races/revenue/total"
+
+    const res = await privateApi.get(url)
+    return res.data.estimatedTotalRevenue ?? res.data
+}
+
+export const useRaceRevenue = (raceId?: string) =>
+    useQuery({
+        queryKey: ["race-revenue", raceId],
+        queryFn: () => getRaceRevenue(raceId!),
+        enabled: !!raceId,
+        staleTime: 1000 * 60 * 5,
+    })
+
+export const useTotalEstimatedRevenue = (userId?: string) =>
+    useQuery({
+        queryKey: ["race-revenue-total", userId],
+        queryFn: () => getTotalEstimatedRevenue(userId),
+        staleTime: 1000 * 60 * 5,
+    })
