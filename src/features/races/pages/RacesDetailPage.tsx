@@ -730,13 +730,20 @@ export default function RaceDetailPage() {
                             )}
 
                             {/* NON-HOST — ONLY IF UPCOMING */}
-                            {!isHost && race?.status === "upcoming" && (
-                                <>
-                                    {hasJoined ? (
-                                        <div className="text-center">
-                                            Already registered.
-                                        </div>
-                                    ) : (
+                            {!isHost &&
+                                race?.status === "upcoming" &&
+                                !hasJoined && (
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-gray-500 font-body text-center">
+                                            By paying the registration fee, you
+                                            acknowledge that you have read and
+                                            agree to the
+                                            <span className="font-semibold">
+                                                {" "}
+                                                Participant Waiver & Agreement
+                                            </span>{" "}
+                                            and race rules.
+                                        </p>
                                         <button
                                             onClick={() => {
                                                 if (
@@ -752,8 +759,8 @@ export default function RaceDetailPage() {
                                             }}
                                             disabled={isJoining}
                                             className="w-full py-4 font-heading text-2xl rounded-lg transition-all
-                    bg-linear-to-br from-cyan-400 to-lime-600 text-white
-                    hover:shadow-2xl hover:shadow-electric-cyan/50"
+            bg-linear-to-br from-cyan-400 to-lime-600 text-white
+            hover:shadow-2xl hover:shadow-electric-cyan/50"
                                         >
                                             {isJoining
                                                 ? "Processing..."
@@ -763,9 +770,8 @@ export default function RaceDetailPage() {
                                                   )}`
                                                 : "REGISTER NOW"}
                                         </button>
-                                    )}
-                                </>
-                            )}
+                                    </div>
+                                )}
                         </div>
 
                         {/* Quick Stats */}
@@ -931,6 +937,39 @@ export default function RaceDetailPage() {
                                                 </p>
                                             </div>
                                         </div> */}
+                                    </div>
+
+                                    <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
+                                        <h3 className="font-heading text-2xl text-gray-900 mb-4">
+                                            PARTICIPANT WAIVER & AGREEMENT
+                                        </h3>
+                                        <div className="space-y-3 font-body text-gray-700">
+                                            <p>
+                                                By registering for this race,
+                                                you acknowledge and agree that
+                                                participation is at your own
+                                                risk. You confirm that you are
+                                                physically fit to take part in
+                                                this event and that you have
+                                                obtained any medical clearance
+                                                you consider necessary.
+                                            </p>
+                                            <p>
+                                                You release the race organizers,
+                                                volunteers, sponsors, and
+                                                affiliated parties from any
+                                                liability for injuries,
+                                                accidents, or health issues that
+                                                may occur before, during, or
+                                                after the event.
+                                            </p>
+                                            <p>
+                                                You also agree to follow all
+                                                race rules, safety guidelines,
+                                                and instructions from race
+                                                officials.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             )}
