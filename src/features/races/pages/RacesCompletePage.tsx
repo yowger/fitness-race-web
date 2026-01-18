@@ -22,6 +22,8 @@ import {
     type Tracking,
 } from "../hooks/useRaces"
 import { formatDate } from "../../../lib/time"
+import { jsPDF } from "jspdf"
+import { autoTable } from "jspdf-autotable"
 
 interface RaceResults {
     id: string
@@ -218,7 +220,17 @@ export default function RaceResultsPage() {
     function exportResults(data: RaceResults[]) {
         if (!data || data.length === 0) return
 
-        const header = ["Position", "BIB", "Runner", "Time", "Pace"]
+        const doc = new jsPDF("p", "pt", "a4")
+        const title = "Race Results"
+
+        // Title
+        doc.setFontSize(18)
+        doc.text(title, 40, 40)
+
+        // Table headers
+        const headers = ["Position", "BIB", "Runner", "Time", "Pace"]
+
+        // Table rows
         const rows = data.map((r) => [
             r.position,
             r.bib,
@@ -227,21 +239,356 @@ export default function RaceResultsPage() {
             r.pace,
         ])
 
-        const csvContent = [header, ...rows]
-            .map((row) => row.join(","))
-            .join("\n")
-
-        const bom = "\uFEFF"
-        const blob = new Blob([bom + csvContent], {
-            type: "text/csv;charset=utf-8;",
+        // Add table
+        autoTable(doc, {
+            head: [headers],
+            body: rows,
+            startY: 60,
+            theme: "grid",
+            headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+            styles: { fontSize: 10 },
         })
-        const url = URL.createObjectURL(blob)
 
-        const link = document.createElement("a")
-        link.href = url
-        link.setAttribute("download", `race-results.csv`)
-        link.click()
-        URL.revokeObjectURL(url)
+        // Footer with export date
+        doc.setFontSize(9)
+        doc.text(
+            `Exported: ${new Date().toLocaleString()}`,
+            40,
+            doc.internal.pageSize.getHeight() - 30
+        )
+
+        // Save PDF
+        doc.save(`race-${race?.name}.pdf`)
+    }
+
+    function downloadCertificate(
+        runner: RaceResults,
+        raceName: string,
+        raceDate: string
+    ) {
+        const doc = new jsPDF("landscape", "pt", "a4")
+        const width = doc.internal.pageSize.getWidth()
+        const height = doc.internal.pageSize.getHeight()
+
+        // Determine placement
+        const is1st = runner.position === 1
+        const is2nd = runner.position === 2
+        const is3rd = runner.position === 3
+        const isPodium = is1st || is2nd || is3rd
+
+        // === BACKGROUND & BORDER ===
+        if (is1st) {
+            // Gold gradient background for 1st place
+            doc.setFillColor(255, 250, 230) // Light gold
+            doc.rect(0, 0, width, height, "F")
+
+            // Double border
+            doc.setDrawColor(218, 165, 32) // Goldenrod
+            doc.setLineWidth(8)
+            doc.rect(20, 20, width - 40, height - 40, "S")
+
+            doc.setDrawColor(255, 215, 0) // Gold
+            doc.setLineWidth(4)
+            doc.rect(30, 30, width - 60, height - 60, "S")
+
+            // Corner decorations
+            doc.setFillColor(218, 165, 32)
+            const cornerSize = 15
+            // Top-left
+            doc.circle(40, 40, cornerSize, "F")
+            // Top-right
+            doc.circle(width - 40, 40, cornerSize, "F")
+            // Bottom-left
+            doc.circle(40, height - 40, cornerSize, "F")
+            // Bottom-right
+            doc.circle(width - 40, height - 40, cornerSize, "F")
+        } else if (is2nd) {
+            // Silver gradient for 2nd place
+            doc.setFillColor(248, 248, 255) // Ghost white
+            doc.rect(0, 0, width, height, "F")
+
+            doc.setDrawColor(192, 192, 192) // Silver
+            doc.setLineWidth(8)
+            doc.rect(20, 20, width - 40, height - 40, "S")
+
+            doc.setDrawColor(169, 169, 169) // Dark gray
+            doc.setLineWidth(4)
+            doc.rect(30, 30, width - 60, height - 60, "S")
+
+            // Corner decorations
+            doc.setFillColor(192, 192, 192)
+            const cornerSize = 15
+            doc.circle(40, 40, cornerSize, "F")
+            doc.circle(width - 40, 40, cornerSize, "F")
+            doc.circle(40, height - 40, cornerSize, "F")
+            doc.circle(width - 40, height - 40, cornerSize, "F")
+        } else if (is3rd) {
+            // Bronze gradient for 3rd place
+            doc.setFillColor(255, 248, 240) // Floral white
+            doc.rect(0, 0, width, height, "F")
+
+            doc.setDrawColor(205, 127, 50) // Bronze
+            doc.setLineWidth(8)
+            doc.rect(20, 20, width - 40, height - 40, "S")
+
+            doc.setDrawColor(184, 115, 51) // Dark bronze
+            doc.setLineWidth(4)
+            doc.rect(30, 30, width - 60, height - 60, "S")
+
+            // Corner decorations
+            doc.setFillColor(205, 127, 50)
+            const cornerSize = 15
+            doc.circle(40, 40, cornerSize, "F")
+            doc.circle(width - 40, 40, cornerSize, "F")
+            doc.circle(40, height - 40, cornerSize, "F")
+            doc.circle(width - 40, height - 40, cornerSize, "F")
+        } else {
+            // Clean design for finishers
+            doc.setFillColor(250, 250, 255) // Lavender blush
+            doc.rect(0, 0, width, height, "F")
+
+            doc.setDrawColor(8, 145, 178) // Cyan
+            doc.setLineWidth(6)
+            doc.rect(20, 20, width - 40, height - 40, "S")
+
+            doc.setDrawColor(22, 163, 74) // Green
+            doc.setLineWidth(3)
+            doc.rect(28, 28, width - 56, height - 56, "S")
+        }
+
+        // === TOP BADGE ===
+        if (isPodium) {
+            let badgeColor: [number, number, number]
+            let badgeText: string
+
+            if (is1st) {
+                badgeColor = [218, 165, 32] // Gold
+                badgeText = "CHAMPION"
+            } else if (is2nd) {
+                badgeColor = [192, 192, 192] // Silver
+                badgeText = "2ND PLACE"
+            } else {
+                badgeColor = [205, 127, 50] // Bronze
+                badgeText = "3RD PLACE"
+            }
+
+            doc.setFillColor(...badgeColor)
+            doc.roundedRect(width / 2 - 100, 50, 200, 40, 20, 20, "F")
+
+            doc.setFontSize(16)
+            doc.setTextColor(255, 255, 255)
+            doc.setFont("helvetica", "bold")
+            doc.text(badgeText, width / 2, 77, { align: "center" })
+        }
+
+        // === TITLE ===
+        doc.setFontSize(36)
+        doc.setTextColor(30, 41, 59) // Slate 800
+        doc.setFont("times", "bold")
+
+        if (isPodium) {
+            doc.text(
+                "CERTIFICATE OF EXCELLENCE",
+                width / 2,
+                isPodium ? 130 : 100,
+                {
+                    align: "center",
+                }
+            )
+        } else {
+            doc.text("CERTIFICATE OF ACHIEVEMENT", width / 2, 100, {
+                align: "center",
+            })
+        }
+
+        // === DECORATIVE LINE ===
+        doc.setDrawColor(8, 145, 178)
+        doc.setLineWidth(2)
+        doc.line(
+            width / 2 - 150,
+            isPodium ? 145 : 115,
+            width / 2 + 150,
+            isPodium ? 145 : 115
+        )
+
+        // === PRESENTED TO ===
+        doc.setFontSize(14)
+        doc.setTextColor(100, 116, 139) // Slate 500
+        doc.setFont("helvetica", "normal")
+        doc.text(
+            "This certificate is proudly presented to",
+            width / 2,
+            isPodium ? 180 : 150,
+            {
+                align: "center",
+            }
+        )
+
+        // === RUNNER NAME ===
+        doc.setFontSize(48)
+        if (is1st) {
+            doc.setTextColor(218, 165, 32) // Gold
+        } else if (is2nd) {
+            doc.setTextColor(128, 128, 128) // Gray
+        } else if (is3rd) {
+            doc.setTextColor(205, 127, 50) // Bronze
+        } else {
+            doc.setTextColor(8, 145, 178) // Cyan
+        }
+        doc.setFont("times", "bolditalic")
+        doc.text(runner.name, width / 2, isPodium ? 230 : 200, {
+            align: "center",
+        })
+
+        // === NAME UNDERLINE ===
+        doc.setDrawColor(100, 116, 139)
+        doc.setLineWidth(1)
+        doc.line(
+            width / 2 - 200,
+            isPodium ? 240 : 210,
+            width / 2 + 200,
+            isPodium ? 240 : 210
+        )
+
+        // === ACHIEVEMENT TEXT ===
+        doc.setFontSize(18)
+        doc.setTextColor(30, 41, 59)
+        doc.setFont("helvetica", "normal")
+
+        let achievementText: string
+        if (is1st) {
+            achievementText =
+                "for outstanding performance and claiming FIRST PLACE"
+        } else if (is2nd) {
+            achievementText =
+                "for exceptional performance and achieving SECOND PLACE"
+        } else if (is3rd) {
+            achievementText =
+                "for remarkable performance and securing THIRD PLACE"
+        } else {
+            achievementText = "for successfully completing the race"
+        }
+
+        doc.text(achievementText, width / 2, isPodium ? 275 : 245, {
+            align: "center",
+        })
+
+        // === RACE INFO BOX ===
+        const boxY = isPodium ? 310 : 280
+        const boxHeight = 80
+
+        // Box background
+        if (is1st) {
+            doc.setFillColor(255, 250, 230)
+        } else if (is2nd) {
+            doc.setFillColor(248, 248, 255)
+        } else if (is3rd) {
+            doc.setFillColor(255, 248, 240)
+        } else {
+            doc.setFillColor(240, 253, 244) // Green tint
+        }
+        doc.roundedRect(width / 2 - 250, boxY, 500, boxHeight, 10, 10, "F")
+
+        // Box border
+        if (is1st) {
+            doc.setDrawColor(218, 165, 32)
+        } else if (is2nd) {
+            doc.setDrawColor(192, 192, 192)
+        } else if (is3rd) {
+            doc.setDrawColor(205, 127, 50)
+        } else {
+            doc.setDrawColor(8, 145, 178)
+        }
+        doc.setLineWidth(2)
+        doc.roundedRect(width / 2 - 250, boxY, 500, boxHeight, 10, 10, "S")
+
+        // Race name
+        doc.setFontSize(22)
+        doc.setTextColor(30, 41, 59)
+        doc.setFont("helvetica", "bold")
+        doc.text(raceName, width / 2, boxY + 30, { align: "center" })
+
+        // Date
+        doc.setFontSize(14)
+        doc.setTextColor(100, 116, 139)
+        doc.setFont("helvetica", "normal")
+        doc.text(raceDate, width / 2, boxY + 52, { align: "center" })
+
+        // Stats
+        doc.setFontSize(16)
+        doc.setTextColor(30, 41, 59)
+        doc.setFont("helvetica", "bold")
+        doc.text(
+            `Finish Time: ${runner.time}  •  Avg Pace: ${runner.pace}/km`,
+            width / 2,
+            boxY + 72,
+            { align: "center" }
+        )
+
+        // === POSITION BADGE (for podium) ===
+        if (isPodium) {
+            const badgeY = boxY + boxHeight + 30
+            let positionBadgeColor: [number, number, number]
+            let positionText: string
+
+            if (is1st) {
+                positionBadgeColor = [218, 165, 32]
+                positionText = "1st PLACE"
+            } else if (is2nd) {
+                positionBadgeColor = [192, 192, 192]
+                positionText = "2nd PLACE"
+            } else {
+                positionBadgeColor = [205, 127, 50]
+                positionText = "3rd PLACE"
+            }
+
+            doc.setFillColor(...positionBadgeColor)
+            doc.roundedRect(width / 2 - 80, badgeY, 160, 35, 17.5, 17.5, "F")
+
+            doc.setFontSize(20)
+            doc.setTextColor(255, 255, 255)
+            doc.setFont("helvetica", "bold")
+            doc.text(positionText, width / 2, badgeY + 24, { align: "center" })
+        }
+
+        // === FOOTER ===
+        const footerY = height - 60
+
+        // Issued date
+        doc.setFontSize(11)
+        doc.setTextColor(100, 116, 139)
+        doc.setFont("helvetica", "italic")
+        doc.text(
+            `Certificate issued on ${new Date().toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+            })}`,
+            width / 2,
+            footerY,
+            { align: "center" }
+        )
+
+        // Signature line (optional)
+        doc.setDrawColor(100, 116, 139)
+        doc.setLineWidth(1)
+        doc.line(width / 2 - 100, footerY - 35, width / 2 + 100, footerY - 35)
+
+        doc.setFontSize(10)
+        doc.text("Race Director", width / 2, footerY - 20, { align: "center" })
+
+        // === SAVE PDF ===
+        const fileName = `${runner.name.replace(/\s+/g, "-")}-${
+            is1st
+                ? "1st-Place"
+                : is2nd
+                ? "2nd-Place"
+                : is3rd
+                ? "3rd-Place"
+                : "Finisher"
+        }-Certificate.pdf`
+
+        doc.save(fileName)
     }
 
     return (
@@ -345,7 +692,7 @@ export default function RaceResultsPage() {
                     </h2>
 
                     <div className="flex items-end justify-center gap-8 max-w-4xl mx-auto">
-                        {podium[0] && (
+                        {podium[1] && (
                             <div className="podium-2 flex-1 text-center">
                                 <div className="relative inline-block mb-4">
                                     <div className="w-24 h-24 rounded-full medal-silver flex items-center justify-center shine">
@@ -363,9 +710,6 @@ export default function RaceResultsPage() {
                                         <h3 className="font-display text-2xl text-zinc-900 mb-2">
                                             {podium[1].name}
                                         </h3>
-                                        {/* <div className="inline-block px-3 py-1 bg-gray-100 text-zinc-600 text-xs rounded-full font-body mb-4">
-                                        {podium[1].category}
-                                    </div> */}
                                         <div className="font-display text-4xl text-zinc-900 mb-1">
                                             {podium[1].time}
                                         </div>
@@ -373,10 +717,19 @@ export default function RaceResultsPage() {
                                             {podium[1].pace} /km
                                         </div>
                                     </div>
-                                    {/* <button className="certificate-btn mt-4 w-full py-2 bg-gray-100 hover:bg-gray-200 text-zinc-900 font-heading text-sm rounded-lg transition-colors flex items-center justify-center gap-2">
+                                    <button
+                                        onClick={() =>
+                                            downloadCertificate(
+                                                podium[1],
+                                                race?.name || "Race",
+                                                formatDate(race?.start_time)
+                                            )
+                                        }
+                                        className="certificate-btn mt-4 w-full py-2 bg-gray-100 hover:bg-gray-200 text-zinc-900 font-heading text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                                    >
                                         <Download className="w-4 h-4" />
                                         CERTIFICATE
-                                    </button> */}
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -399,9 +752,6 @@ export default function RaceResultsPage() {
                                         <h3 className="font-display text-3xl text-zinc-900 mb-2">
                                             {podium[0].name}
                                         </h3>
-                                        {/* <div className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-body mb-4">
-                                        {podium[0].category}
-                                    </div> */}
                                         <div className="font-display text-5xl text-yellow-600 mb-1">
                                             {podium[0].time}
                                         </div>
@@ -409,10 +759,19 @@ export default function RaceResultsPage() {
                                             {podium[0].pace} /km
                                         </div>
                                     </div>
-                                    {/* <button className="certificate-btn mt-4 w-full py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white font-heading text-base rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl">
+                                    <button
+                                        onClick={() =>
+                                            downloadCertificate(
+                                                podium[0],
+                                                race?.name || "Race",
+                                                formatDate(race?.start_time)
+                                            )
+                                        }
+                                        className="certificate-btn mt-4 w-full py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white font-heading text-base rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+                                    >
                                         <Download className="w-4 h-4" />
                                         CERTIFICATE
-                                    </button> */}
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -435,9 +794,6 @@ export default function RaceResultsPage() {
                                         <h3 className="font-display text-2xl text-zinc-900 mb-2">
                                             {podium[2].name}
                                         </h3>
-                                        {/* <div className="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-body mb-4">
-                                        {podium[2].category}
-                                    </div> */}
                                         <div className="font-display text-4xl text-zinc-900 mb-1">
                                             {podium[2].time}
                                         </div>
@@ -445,7 +801,16 @@ export default function RaceResultsPage() {
                                             {podium[2].pace} /km
                                         </div>
                                     </div>
-                                    <button className="certificate-btn mt-4 w-full py-2 bg-orange-100 hover:bg-orange-200 text-orange-900 font-heading text-sm rounded-lg transition-colors flex items-center justify-center gap-2">
+                                    <button
+                                        onClick={() =>
+                                            downloadCertificate(
+                                                podium[2],
+                                                race?.name || "Race",
+                                                formatDate(race?.start_time)
+                                            )
+                                        }
+                                        className="certificate-btn mt-4 w-full py-2 bg-orange-100 hover:bg-orange-200 text-orange-900 font-heading text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                                    >
                                         <Download className="w-4 h-4" />
                                         CERTIFICATE
                                     </button>
@@ -473,25 +838,6 @@ export default function RaceResultsPage() {
                                         className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg font-body focus:outline-none focus:border-cyan-600 transition-colors"
                                     />
                                 </div>
-                                {/* 
-                                <div className="flex items-center gap-2">
-                                    <Filter className="w-5 h-5 text-zinc-600" />
-                                    <select
-                                        value={categoryFilter}
-                                        onChange={(e) =>
-                                            setCategoryFilter(e.target.value)
-                                        }
-                                        className="px-4 py-3 border-2 border-gray-300 rounded-lg font-body focus:outline-none focus:border-cyan-600 transition-colors"
-                                    >
-                                        {categories.map((cat) => (
-                                            <option key={cat} value={cat}>
-                                                {cat === "all"
-                                                    ? "All Categories"
-                                                    : cat}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div> */}
 
                                 <button
                                     onClick={() =>
@@ -509,10 +855,6 @@ export default function RaceResultsPage() {
                                     Showing {filteredResults.length} of{" "}
                                     {resultsData.length} results
                                 </span>
-                                {/* <button className="flex items-center gap-2 text-cyan-600 hover:text-cyan-700 font-medium">
-                                    <Share2 className="w-4 h-4" />
-                                    Share Results
-                                </button> */}
                             </div>
                         </div>
 
@@ -611,12 +953,22 @@ export default function RaceResultsPage() {
                                             {/* ACTIONS */}
                                             <td className="px-6 py-5">
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <button className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            downloadCertificate(
+                                                                runner,
+                                                                race?.name ||
+                                                                    "Race",
+                                                                formatDate(
+                                                                    race?.start_time
+                                                                )
+                                                            )
+                                                        }}
+                                                        className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                                    >
                                                         <Download className="w-4 h-4 text-zinc-700" />
                                                     </button>
-                                                    {/* <button className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-                                                        <Share2 className="w-4 h-4 text-zinc-700" />
-                                                    </button> */}
                                                 </div>
                                             </td>
                                         </tr>
@@ -661,16 +1013,6 @@ export default function RaceResultsPage() {
                                         <h3 className="font-display text-4xl text-zinc-900 mb-2">
                                             {selectedRunner.name}
                                         </h3>
-                                        {/* <div className="flex items-center gap-3">
-                                            <span className="px-3 py-1 bg-gray-100 text-zinc-700 text-sm rounded-full font-body">
-                                                {selectedRunner.category}
-                                            </span>
-                                            {selectedRunner.team && (
-                                                <span className="text-zinc-600 font-body">
-                                                    {selectedRunner.team}
-                                                </span>
-                                            )}
-                                        </div> */}
                                     </div>
                                 </div>
                                 <button
@@ -681,7 +1023,7 @@ export default function RaceResultsPage() {
                                 </button>
                             </div>
 
-                            <div className="grid grid-cols-3 gap-4 mb-6">
+                            <div className="grid grid-cols-2 gap-4 mb-6">
                                 <div className="p-4 bg-gradient-to-br from-cyan-50 to-cyan-100 border border-cyan-200 rounded-lg">
                                     <div className="font-body text-sm text-zinc-600 mb-1">
                                         Finish Time
@@ -698,50 +1040,49 @@ export default function RaceResultsPage() {
                                         {selectedRunner.pace}
                                     </div>
                                 </div>
-                                {/* <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg">
-                                    <div className="font-body text-sm text-zinc-600 mb-1">
-                                        Cat. Position
-                                    </div>
-                                    <div className="font-display text-3xl text-orange-700">
-                                        #{selectedRunner.categoryPosition}
-                                    </div>
-                                </div> */}
                             </div>
 
                             {/* Splits */}
-                            <div className="mb-6">
-                                <h4 className="font-heading text-xl text-zinc-900 mb-3">
-                                    SPLIT TIMES
-                                </h4>
-                                <div className="grid grid-cols-4 gap-3">
-                                    {selectedRunner.splits.map(
-                                        (split, index) => (
-                                            <div
-                                                key={index}
-                                                className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center"
-                                            >
-                                                <div className="font-body text-xs text-zinc-500 mb-1">
-                                                    KM {index + 1}
+                            {selectedRunner.splits.length > 0 && (
+                                <div className="mb-6">
+                                    <h4 className="font-heading text-xl text-zinc-900 mb-3">
+                                        SPLIT TIMES
+                                    </h4>
+                                    <div className="grid grid-cols-4 gap-3">
+                                        {selectedRunner.splits.map(
+                                            (split, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center"
+                                                >
+                                                    <div className="font-body text-xs text-zinc-500 mb-1">
+                                                        KM {index + 1}
+                                                    </div>
+                                                    <div className="font-display text-xl text-zinc-900">
+                                                        {split}
+                                                    </div>
                                                 </div>
-                                                <div className="font-display text-xl text-zinc-900">
-                                                    {split}
-                                                </div>
-                                            </div>
-                                        )
-                                    )}
+                                            )
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
-                            {/* <div className="flex gap-3">
-                                <button className="flex-1 py-3 bg-gradient-to-r from-cyan-600 to-green-600 text-white font-heading text-lg rounded-lg hover:shadow-xl transition-all flex items-center justify-center gap-2">
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() =>
+                                        downloadCertificate(
+                                            selectedRunner,
+                                            race?.name || "Race",
+                                            formatDate(race?.start_time)
+                                        )
+                                    }
+                                    className="flex-1 py-3 bg-gradient-to-r from-cyan-600 to-green-600 text-white font-heading text-lg rounded-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                                >
                                     <Download className="w-5 h-5" />
                                     DOWNLOAD CERTIFICATE
                                 </button>
-                                <button className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-zinc-900 font-heading text-lg rounded-lg transition-colors flex items-center justify-center gap-2">
-                                    <Share2 className="w-5 h-5" />
-                                    SHARE RESULT
-                                </button>
-                            </div> */}
+                            </div>
                         </div>
                     </div>
                 )}
