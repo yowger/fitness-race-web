@@ -413,6 +413,17 @@ export default function RaceDetailPage() {
                                         HOST INSIGHTS
                                     </button>
                                 )}
+
+                                <button
+                                    onClick={() => setActiveTab("rules")}
+                                    className={`tab-button pb-4 ${
+                                        activeTab === "rules"
+                                            ? "active text-gray-900"
+                                            : "text-gray-400"
+                                    }`}
+                                >
+                                    Rules
+                                </button>
                             </div>
                         </div>
 
@@ -790,6 +801,139 @@ export default function RaceDetailPage() {
                                     filled
                                 </p>
                             </div>
+
+                            {activeTab === "rules" && (
+                                <div className="fade-in space-y-8">
+                                    <h2 className="font-display text-4xl mb-6 text-gray-900">
+                                        Race Rules & Policies
+                                    </h2>
+
+                                    <div className="space-y-6">
+                                        {/* Race Rules Section */}
+                                        <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
+                                            <h3 className="font-heading text-2xl text-gray-900 mb-4">
+                                                GENERAL RULES
+                                            </h3>
+                                            <ul className="space-y-3 font-body text-gray-700">
+                                                <li className="flex items-start gap-3">
+                                                    <span className="text-electric-cyan mt-1">
+                                                        •
+                                                    </span>
+                                                    <span>
+                                                        All participants must be
+                                                        registered before race
+                                                        day
+                                                    </span>
+                                                </li>
+                                                <li className="flex items-start gap-3">
+                                                    <span className="text-electric-cyan mt-1">
+                                                        •
+                                                    </span>
+                                                    <span>
+                                                        Race bibs must be worn
+                                                        visibly at all times
+                                                        during the event
+                                                    </span>
+                                                </li>
+                                                <li className="flex items-start gap-3">
+                                                    <span className="text-electric-cyan mt-1">
+                                                        •
+                                                    </span>
+                                                    <span>
+                                                        Follow the designated
+                                                        route - shortcuts will
+                                                        result in
+                                                        disqualification
+                                                    </span>
+                                                </li>
+                                                <li className="flex items-start gap-3">
+                                                    <span className="text-electric-cyan mt-1">
+                                                        •
+                                                    </span>
+                                                    <span>
+                                                        Respect fellow runners,
+                                                        volunteers, and
+                                                        spectators
+                                                    </span>
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        {/* Safety Guidelines */}
+                                        <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
+                                            <h3 className="font-heading text-2xl text-gray-900 mb-4">
+                                                SAFETY GUIDELINES
+                                            </h3>
+                                            <ul className="space-y-3 font-body text-gray-700">
+                                                <li className="flex items-start gap-3">
+                                                    <span className="text-hot-orange mt-1">
+                                                        •
+                                                    </span>
+                                                    <span>
+                                                        Participants run at
+                                                        their own risk
+                                                    </span>
+                                                </li>
+                                                <li className="flex items-start gap-3">
+                                                    <span className="text-hot-orange mt-1">
+                                                        •
+                                                    </span>
+                                                    <span>
+                                                        Medical clearance
+                                                        recommended for all
+                                                        participants
+                                                    </span>
+                                                </li>
+                                                <li className="flex items-start gap-3">
+                                                    <span className="text-hot-orange mt-1">
+                                                        •
+                                                    </span>
+                                                    <span>
+                                                        Stay hydrated throughout
+                                                        the race
+                                                    </span>
+                                                </li>
+                                                <li className="flex items-start gap-3">
+                                                    <span className="text-hot-orange mt-1">
+                                                        •
+                                                    </span>
+                                                    <span>
+                                                        Report any injuries or
+                                                        emergencies to race
+                                                        marshals immediately
+                                                    </span>
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        {/* Cancellation Policy */}
+                                        {/* <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
+                                            <h3 className="font-heading text-2xl text-gray-900 mb-4">
+                                                CANCELLATION POLICY
+                                            </h3>
+                                            <div className="space-y-3 font-body text-gray-700">
+                                                <p>
+                                                    Registration fees are
+                                                    non-refundable except in
+                                                    case of event cancellation
+                                                    by organizers.
+                                                </p>
+                                                <p>
+                                                    Race may be postponed or
+                                                    cancelled due to severe
+                                                    weather or unforeseen
+                                                    circumstances.
+                                                </p>
+                                                <p>
+                                                    Participants will be
+                                                    notified via email of any
+                                                    changes to the event.
+                                                </p>
+                                            </div>
+                                        </div> */}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* <div className="pt-4 border-t border-gray-200 space-y-3">
                                 <div className="flex items-start gap-3">
