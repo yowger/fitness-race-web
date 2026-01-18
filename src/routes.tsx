@@ -107,7 +107,7 @@ const router = createBrowserRouter([
                                         element: <RacesDetailPage />,
                                     },
                                     {
-                                        path: "payment/:id",
+                                        path: ":id/pay",
                                         element: <PaymentRacePage />,
                                     },
                                     // {

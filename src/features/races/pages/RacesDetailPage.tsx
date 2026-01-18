@@ -93,10 +93,13 @@ export default function RaceDetailPage() {
     const navigate = useNavigate()
 
     const handleJoinRace = async () => {
+        console.log("🚀 ~ handleJoinRace ~ race:", race)
+
         if (!race || !user) return
 
         if (race.price && race.price > 0) {
-            navigate(`/races/payment/${race?.id}`)
+            console.log("🚀 ~ handleJoinRace ~ race: 2", race)
+            navigate(`/dashboard/races/${race?.id}/pay`)
         }
 
         setIsJoining(true)
@@ -629,12 +632,13 @@ export default function RaceDetailPage() {
                                 </div>
                             </div>
 
+                            {/* HOST ACTIONS */}
                             {isHost &&
                                 race &&
-                                (race?.status === "upcoming" ||
-                                    race?.status === "ongoing") && (
+                                (race.status === "upcoming" ||
+                                    race.status === "ongoing") && (
                                     <Link
-                                        to={`/dashboard/races/${race?.id}/live`}
+                                        to={`/dashboard/races/${race.id}/live`}
                                         className="block w-full mb-4 py-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-white font-heading text-2xl rounded-lg text-center hover:shadow-2xl hover:shadow-orange-400 transition-all"
                                     >
                                         GO LIVE
@@ -643,7 +647,7 @@ export default function RaceDetailPage() {
 
                             {isHost && race?.status === "finished" && (
                                 <Link
-                                    to={`/dashboard/races/${race?.id}/results`}
+                                    to={`/dashboard/races/${race.id}/results`}
                                     className="block w-full mb-4 py-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-white font-heading text-2xl rounded-lg text-center hover:shadow-2xl hover:shadow-orange-400 transition-all"
                                 >
                                     EDIT RESULTS
@@ -652,52 +656,42 @@ export default function RaceDetailPage() {
 
                             {isHost && race?.status === "complete" && (
                                 <Link
-                                    to={`/dashboard/races/${race?.id}/complete`}
+                                    to={`/dashboard/races/${race.id}/complete`}
                                     className="block w-full mb-4 py-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-white font-heading text-2xl rounded-lg text-center hover:shadow-2xl hover:shadow-orange-400 transition-all"
                                 >
                                     SEE RESULTS
                                 </Link>
                             )}
 
-                            {!isHost && (
+                            {/* NON-HOST — ONLY IF UPCOMING */}
+                            {!isHost && race?.status === "upcoming" && (
                                 <>
                                     {hasJoined ? (
-                                        // <button
-                                        //     onClick={handleLeaveRace}
-                                        //     disabled={
-                                        //         removeParticipantMutation.isPending
-                                        //     }
-                                        //     className="w-full py-4 bg-gray-700 text-white font-heading text-2xl rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                        // >
-                                        //     {removeParticipantMutation.isPending
-                                        //         ? "Leaving..."
-                                        //         : "Leave Race"}
-                                        // </button>
-                                        <div className="text justify-center text-center">
+                                        <div className="text-center">
                                             Already registered.
                                         </div>
                                     ) : (
                                         <button
-                                            onClick={handleJoinRace}
-                                            disabled={
-                                                isJoining ||
-                                                race?.status !== "upcoming"
-                                            }
-                                            className={`w-full py-4 font-heading text-2xl rounded-lg transition-all
-                    ${
-                        race?.status === "upcoming"
-                            ? "bg-linear-to-br from-cyan-400 to-lime-600 text-white hover:shadow-2xl hover:shadow-electric-cyan/50"
-                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    }
-                `}
+                                            onClick={() => {
+                                                if (
+                                                    race.price &&
+                                                    race.price > 0
+                                                ) {
+                                                    navigate(
+                                                        `/dashboard/races/${race.id}/pay`
+                                                    )
+                                                } else {
+                                                    handleJoinRace()
+                                                }
+                                            }}
+                                            disabled={isJoining}
+                                            className="w-full py-4 font-heading text-2xl rounded-lg transition-all
+                    bg-linear-to-br from-cyan-400 to-lime-600 text-white
+                    hover:shadow-2xl hover:shadow-electric-cyan/50"
                                         >
-                                            {/* {isJoining
-                                                ? "Registering..."
-                                                : "REGISTER NOW"} */}
-
                                             {isJoining
-                                                ? "Registering..."
-                                                : race?.price && race.price > 0
+                                                ? "Processing..."
+                                                : race.price && race.price > 0
                                                 ? `PAY ₱${race.price.toFixed(
                                                       2
                                                   )}`
