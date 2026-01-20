@@ -438,7 +438,7 @@ export default function RaceDetailPage() {
                                         // className="font-body text-gray-700 "
                                         className="rich-text-editor prose lg:prose-lg text-gray-700 "
                                         dangerouslySetInnerHTML={createMarkup(
-                                            race.description
+                                            race.description,
                                         )}
                                     ></div>
                                 )}
@@ -458,7 +458,7 @@ export default function RaceDetailPage() {
                                                         {
                                                             size: 64,
                                                             rounded: false,
-                                                        }
+                                                        },
                                                     )}
                                                     alt={
                                                         race?.created_by_user
@@ -506,7 +506,7 @@ export default function RaceDetailPage() {
                                         <div className="shrink-0 w-28">
                                             <span className="font-heading text-2xl text-electric-cyan">
                                                 {formatTime(
-                                                    event.scheduled_time
+                                                    event.scheduled_time,
                                                 )}
                                             </span>
                                         </div>
@@ -550,14 +550,14 @@ export default function RaceDetailPage() {
                                                         ) {
                                                             const bounds =
                                                                 getBoundsFromCoords(
-                                                                    flatCoords
+                                                                    flatCoords,
                                                                 )
                                                             e.target.fitBounds(
                                                                 bounds,
                                                                 {
                                                                     padding: 60,
                                                                     duration: 800,
-                                                                }
+                                                                },
                                                             )
                                                         }
                                                     }}
@@ -684,131 +684,41 @@ export default function RaceDetailPage() {
                                 </div>
                             </div>
                         )}
-                    </div>
 
-                    {/* Right Column */}
-                    <div className="space-y-6">
-                        <div className="info-card fade-in-delay-1 p-8 bg-linear-to-br from-electric-cyan/10 to-lime-green/10 border-2 border-electric-cyan/50 rounded-lg glow-cyan">
-                            <div className="text-center mb-6">
-                                <div className="font-display text-5xl text-gray-900 mb-2">
-                                    {registrationFeeLabel}
-                                </div>
-                                <div className="font-body text-sm text-gray-500 uppercase tracking-wider">
-                                    Registration Fee
-                                </div>
-                            </div>
+                        {activeTab === "rules" && (
+                            <div className="info-card fade-in-delay-2 p-6 bg-gray-50 border border-gray-200 rounded-lg space-y-6">
+                                <h3 className="font-heading text-2xl text-gray-900">
+                                    Quick Info
+                                </h3>
 
-                            {/* HOST ACTIONS */}
-                            {isHost &&
-                                race &&
-                                (race.status === "upcoming" ||
-                                    race.status === "ongoing") && (
-                                    <Link
-                                        to={`/dashboard/races/${race.id}/live`}
-                                        className="block w-full mb-4 py-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-white font-heading text-2xl rounded-lg text-center hover:shadow-2xl hover:shadow-orange-400 transition-all"
-                                    >
-                                        GO LIVE
-                                    </Link>
-                                )}
-
-                            {isHost && race?.status === "finished" && (
-                                <Link
-                                    to={`/dashboard/races/${race.id}/results`}
-                                    className="block w-full mb-4 py-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-white font-heading text-2xl rounded-lg text-center hover:shadow-2xl hover:shadow-orange-400 transition-all"
-                                >
-                                    EDIT RESULTS
-                                </Link>
-                            )}
-
-                            {isHost && race?.status === "complete" && (
-                                <Link
-                                    to={`/dashboard/races/${race.id}/complete`}
-                                    className="block w-full mb-4 py-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-white font-heading text-2xl rounded-lg text-center hover:shadow-2xl hover:shadow-orange-400 transition-all"
-                                >
-                                    SEE RESULTS
-                                </Link>
-                            )}
-
-                            {/* NON-HOST — ONLY IF UPCOMING */}
-                            {!isHost &&
-                                race?.status === "upcoming" &&
-                                !hasJoined && (
-                                    <div className="space-y-2">
-                                        <p className="text-sm text-gray-500 font-body text-center">
-                                            By paying the registration fee, you
-                                            acknowledge that you have read and
-                                            agree to the
-                                            <span className="font-semibold">
-                                                {" "}
-                                                Participant Waiver & Agreement
-                                            </span>{" "}
-                                            and race rules.
-                                        </p>
-                                        <button
-                                            onClick={() => {
-                                                if (
-                                                    race.price &&
-                                                    race.price > 0
-                                                ) {
-                                                    navigate(
-                                                        `/dashboard/races/${race.id}/pay`
-                                                    )
-                                                } else {
-                                                    handleJoinRace()
-                                                }
-                                            }}
-                                            disabled={isJoining}
-                                            className="w-full py-4 font-heading text-2xl rounded-lg transition-all
-            bg-linear-to-br from-cyan-400 to-lime-600 text-white
-            hover:shadow-2xl hover:shadow-electric-cyan/50"
-                                        >
-                                            {isJoining
-                                                ? "Processing..."
-                                                : race.price && race.price > 0
-                                                ? `PAY ₱${race.price.toFixed(
-                                                      2
-                                                  )}`
-                                                : "REGISTER NOW"}
-                                        </button>
-                                    </div>
-                                )}
-                        </div>
-
-                        {/* Quick Stats */}
-                        <div className="info-card fade-in-delay-2 p-6 bg-gray-50 border border-gray-200 rounded-lg space-y-6">
-                            <h3 className="font-heading text-2xl text-gray-900">
-                                Quick Info
-                            </h3>
-
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <Users className="w-5 h-5 text-hot-orange" />
-                                        <span className="font-body text-gray-700">
-                                            Participants
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <Users className="w-5 h-5 text-hot-orange" />
+                                            <span className="font-body text-gray-700">
+                                                Participants
+                                            </span>
+                                        </div>
+                                        <span className="font-heading text-xl text-gray-900">
+                                            {race?.participants?.length}/
+                                            {race?.max_participants}
                                         </span>
                                     </div>
-                                    <span className="font-heading text-xl text-gray-900">
-                                        {race?.participants?.length}/
-                                        {race?.max_participants}
-                                    </span>
+
+                                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                        <div
+                                            className="progress-bar h-full rounded-full"
+                                            style={{
+                                                width: `${participationPercentage}%`,
+                                            }}
+                                        ></div>
+                                    </div>
+                                    <p className="text-sm text-gray-500 font-body">
+                                        {Math.round(participationPercentage)}%
+                                        spots filled
+                                    </p>
                                 </div>
 
-                                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                                    <div
-                                        className="progress-bar h-full rounded-full"
-                                        style={{
-                                            width: `${participationPercentage}%`,
-                                        }}
-                                    ></div>
-                                </div>
-                                <p className="text-sm text-gray-500 font-body">
-                                    {Math.round(participationPercentage)}% spots
-                                    filled
-                                </p>
-                            </div>
-
-                            {activeTab === "rules" && (
                                 <div className="fade-in space-y-8">
                                     <h2 className="font-display text-4xl mb-6 text-gray-900">
                                         Race Rules & Policies
@@ -972,15 +882,14 @@ export default function RaceDetailPage() {
                                         </div>
                                     </div>
                                 </div>
-                            )}
 
-                            {/* <div className="pt-4 border-t border-gray-200 space-y-3">
+                                {/* <div className="pt-4 border-t border-gray-200 space-y-3">
                                 <div className="flex items-start gap-3">
                                     <Award className="w-5 h-5 text-lime-green mt-1 flex-shrink-0" />
                                     <div>
                                         <div className="font-body font-semibold text-gray-900 mb-1">
                                             Awards
-                                        </div>
+                                            </div>
                                         <div className="font-body text-sm text-gray-600">
                                             Medals for all finishers, trophies
                                             for top 3 in each category
@@ -1001,7 +910,99 @@ export default function RaceDetailPage() {
                                     </div>
                                 </div>
                             </div> */}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right Column */}
+                    <div className="space-y-6">
+                        <div className="info-card fade-in-delay-1 p-8 bg-linear-to-br from-electric-cyan/10 to-lime-green/10 border-2 border-electric-cyan/50 rounded-lg glow-cyan">
+                            <div className="text-center mb-6">
+                                <div className="font-display text-5xl text-gray-900 mb-2">
+                                    {registrationFeeLabel}
+                                </div>
+                                <div className="font-body text-sm text-gray-500 uppercase tracking-wider">
+                                    Registration Fee
+                                </div>
+                            </div>
+
+                            {/* HOST ACTIONS */}
+                            {isHost &&
+                                race &&
+                                (race.status === "upcoming" ||
+                                    race.status === "ongoing") && (
+                                    <Link
+                                        to={`/dashboard/races/${race.id}/live`}
+                                        className="block w-full mb-4 py-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-white font-heading text-2xl rounded-lg text-center hover:shadow-2xl hover:shadow-orange-400 transition-all"
+                                    >
+                                        GO LIVE
+                                    </Link>
+                                )}
+
+                            {isHost && race?.status === "finished" && (
+                                <Link
+                                    to={`/dashboard/races/${race.id}/results`}
+                                    className="block w-full mb-4 py-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-white font-heading text-2xl rounded-lg text-center hover:shadow-2xl hover:shadow-orange-400 transition-all"
+                                >
+                                    EDIT RESULTS
+                                </Link>
+                            )}
+
+                            {isHost && race?.status === "complete" && (
+                                <Link
+                                    to={`/dashboard/races/${race.id}/complete`}
+                                    className="block w-full mb-4 py-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-white font-heading text-2xl rounded-lg text-center hover:shadow-2xl hover:shadow-orange-400 transition-all"
+                                >
+                                    SEE RESULTS
+                                </Link>
+                            )}
+
+                            {/* NON-HOST — ONLY IF UPCOMING */}
+                            {!isHost &&
+                                race?.status === "upcoming" &&
+                                !hasJoined && (
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-gray-500 font-body text-center">
+                                            By paying the registration fee, you
+                                            acknowledge that you have read and
+                                            agree to the
+                                            <span className="font-semibold">
+                                                {" "}
+                                                Participant Waiver & Agreement
+                                            </span>{" "}
+                                            and race rules.
+                                        </p>
+                                        <button
+                                            onClick={() => {
+                                                if (
+                                                    race.price &&
+                                                    race.price > 0
+                                                ) {
+                                                    navigate(
+                                                        `/dashboard/races/${race.id}/pay`,
+                                                    )
+                                                } else {
+                                                    handleJoinRace()
+                                                }
+                                            }}
+                                            disabled={isJoining}
+                                            className="w-full py-4 font-heading text-2xl rounded-lg transition-all
+            bg-linear-to-br from-cyan-400 to-lime-600 text-white
+            hover:shadow-2xl hover:shadow-electric-cyan/50"
+                                        >
+                                            {isJoining
+                                                ? "Processing..."
+                                                : race.price && race.price > 0
+                                                  ? `PAY ₱${race.price.toFixed(
+                                                        2,
+                                                    )}`
+                                                  : "REGISTER NOW"}
+                                        </button>
+                                    </div>
+                                )}
                         </div>
+
+                        {/* Quick Stats */}
                     </div>
                 </div>
             </div>

@@ -9,7 +9,8 @@ import { Bell, CheckCheck } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
 export default function NotificationsPage() {
-    const [filter, setFilter] = useState<"all" | "unread">("all")
+    // const [filter, setFilter] = useState<"all" | "unread">("all")
+    const [filter] = useState<"all" | "unread">("all")
 
     const { data: notifications, isLoading } = useNotifications({
         limit: 50,
