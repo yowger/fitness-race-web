@@ -28,6 +28,7 @@ import PendingRacesPage from "./features/admin/pages/PendingRacesPage"
 import AdminStatsPage from "./features/admin/pages/AdminStatsPage"
 import AdminProfilePage from "./features/admin/pages/AdminProfilePage"
 import PaymentRacePage from "./features/races/pages/PaymentRacePage"
+import NotificationsPage from "./features/notifications/pages/notificationsPage"
 
 const router = createBrowserRouter([
     {
@@ -88,6 +89,15 @@ const router = createBrowserRouter([
                                     {
                                         path: ":id",
                                         element: <RoutesDetailsPage />,
+                                    },
+                                ],
+                            },
+                            {
+                                path: "notifications",
+                                children: [
+                                    {
+                                        index: true,
+                                        element: <NotificationsPage />,
                                     },
                                 ],
                             },

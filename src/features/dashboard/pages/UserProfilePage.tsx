@@ -278,7 +278,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                     {/* {data?.results?.slice(0, 3).map((race) => { */}
                                     {userResults?.results?.map((race) => {
                                         const badge = getPositionBadge(
-                                            race.result.position || 0
+                                            race.result.position || 0,
                                         )
 
                                         const status = race.race.status
@@ -326,7 +326,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                                                 {formatDate(
                                                                                     race
                                                                                         .race
-                                                                                        .start_time
+                                                                                        .start_time,
                                                                                 )}
                                                                             </span>
 
@@ -336,7 +336,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                                                     race
                                                                                         .race
                                                                                         .route
-                                                                                        ?.distance
+                                                                                        ?.distance,
                                                                                 )}
                                                                             </span>
 
@@ -374,7 +374,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                                             {formatTime(
                                                                                 race
                                                                                     .result
-                                                                                    .finish_time
+                                                                                    .finish_time,
                                                                             )}
                                                                         </div>
                                                                     </div>
@@ -438,7 +438,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {myHostedRaces?.map((race) => {
                                 const statusStyle = getRaceStatusStyle(
-                                    race.status
+                                    race.status,
                                 )
                                 const participantPercentage =
                                     race.max_participants
@@ -486,7 +486,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                             <span className="flex items-center gap-1 bg-black/30 backdrop-blur-sm px-2 py-1 rounded">
                                                                 <Calendar className="w-4 h-4" />
                                                                 {formatDate(
-                                                                    race.start_time
+                                                                    race.start_time,
                                                                 )}
                                                             </span>
                                                             {race.routes
@@ -496,7 +496,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                                     {formatDistance(
                                                                         race
                                                                             .routes
-                                                                            .distance
+                                                                            .distance,
                                                                     )}
                                                                 </span>
                                                             )}
@@ -535,7 +535,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                                     style={{
                                                                         width: `${Math.min(
                                                                             participantPercentage,
-                                                                            100
+                                                                            100,
                                                                         )}%`,
                                                                     }}
                                                                 ></div>
@@ -563,7 +563,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                                     ? formatDistance(
                                                                           race
                                                                               .routes
-                                                                              .distance
+                                                                              .distance,
                                                                       )
                                                                     : "—"}
                                                             </div>
@@ -574,14 +574,14 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                         <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
                                                             <div className="font-display text-2xl text-purple-700">
                                                                 {new Date(
-                                                                    race.start_time
+                                                                    race.start_time,
                                                                 ).toLocaleTimeString(
                                                                     "en-US",
                                                                     {
                                                                         hour: "2-digit",
                                                                         minute: "2-digit",
                                                                         hour12: true,
-                                                                    }
+                                                                    },
                                                                 )}
                                                             </div>
                                                             <div className="font-body text-xs text-zinc-600 uppercase">
@@ -704,7 +704,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                         <span className="flex items-center gap-1 bg-black/30 backdrop-blur-sm px-2 py-1 rounded">
                                                             <Calendar className="w-4 h-4" />
                                                             {formatDate(
-                                                                race.start_time
+                                                                race.start_time,
                                                             )}
                                                         </span>
                                                         {race.routes
@@ -713,7 +713,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                                 <Flag className="w-4 h-4" />
                                                                 {formatDistance(
                                                                     race.routes
-                                                                        .distance
+                                                                        .distance,
                                                                 )}
                                                             </span>
                                                         )}
@@ -751,14 +751,14 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                         <Clock className="w-5 h-5 text-cyan-600 mx-auto mb-1" />
                                                         <div className="font-display text-xl text-cyan-700">
                                                             {new Date(
-                                                                race.start_time
+                                                                race.start_time,
                                                             ).toLocaleTimeString(
                                                                 "en-US",
                                                                 {
                                                                     hour: "2-digit",
                                                                     minute: "2-digit",
                                                                     hour12: true,
-                                                                }
+                                                                },
                                                             )}
                                                         </div>
                                                         <div className="font-body text-xs text-zinc-600 uppercase">
@@ -783,7 +783,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                                 ? formatDistance(
                                                                       race
                                                                           .routes
-                                                                          .distance
+                                                                          .distance,
                                                                   )
                                                                 : "—"}
                                                         </div>
@@ -932,7 +932,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                             </td>
                                             <td className="px-4 py-2">
                                                 {new Date(
-                                                    race.startTime || ""
+                                                    race.startTime || "",
                                                 ).toLocaleDateString()}
                                             </td>
                                             <td className="px-4 py-2">
@@ -944,7 +944,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                             <td className="px-4 py-2">
                                                 ₱
                                                 {race.estimatedRevenue.toFixed(
-                                                    2
+                                                    2,
                                                 )}
                                             </td>
                                         </tr>
@@ -963,7 +963,7 @@ export default function RunnerProfilePage({ id }: { id: string }) {
                                                     (acc, r) =>
                                                         acc +
                                                         r.estimatedRevenue,
-                                                    0
+                                                    0,
                                                 )
                                                 .toFixed(2)}
                                         </td>

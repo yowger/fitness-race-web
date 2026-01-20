@@ -6,11 +6,15 @@ import { AppSidebar } from "../components/AppSidebar"
 import AppHeader from "../components/AppHeader"
 import { useSession } from "../../auth/hooks/useSession"
 import { supabase } from "../../../lib/supabase"
+import { useUnreadNotificationsCount } from "../../notifications/api/useNotifications"
 
 const DashboardLayout = () => {
     const { user } = useSession()
     const username = user?.full_name || ""
     const navigate = useNavigate()
+
+    const { data: unreadCount } = useUnreadNotificationsCount()
+    console.log("🚀 ~ DashboardLayout ~ unreadCount:", unreadCount)
 
     const handleLogout = async () => {
         await supabase.auth.signOut()
@@ -34,7 +38,7 @@ const DashboardLayout = () => {
     return (
         <div className="flex min-h-screen">
             <SidebarProvider defaultOpen={defaultOpen}>
-                <AppSidebar role={user?.role} />
+                <AppSidebar role={user?.role} unreadCount={unreadCount ?? 0} />
 
                 <div className="flex flex-1 flex-col">
                     <AppHeader
