@@ -29,6 +29,7 @@ import AdminStatsPage from "./features/admin/pages/AdminStatsPage"
 import AdminProfilePage from "./features/admin/pages/AdminProfilePage"
 import PaymentRacePage from "./features/races/pages/PaymentRacePage"
 import NotificationsPage from "./features/notifications/pages/notificationsPage"
+import RacesUpdateTimePage from "./features/races/pages/RacesUpdateTimePage"
 
 const router = createBrowserRouter([
     {
@@ -115,6 +116,10 @@ const router = createBrowserRouter([
                                     {
                                         path: ":id",
                                         element: <RacesDetailPage />,
+                                    },
+                                    {
+                                        path: ":id/update-time",
+                                        element: <RacesUpdateTimePage />,
                                     },
                                     {
                                         path: ":id/pay",

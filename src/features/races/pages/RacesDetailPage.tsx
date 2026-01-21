@@ -333,6 +333,15 @@ export default function RaceDetailPage() {
                                         <span>
                                             {formatTime(race?.start_time)}
                                         </span>
+
+                                        {isHost && (
+                                            <Link
+                                                to={`/dashboard/races/${race?.id}/update-time`}
+                                                className="ml-2 px-3 py-1 text-sm bg-black text-white rounded hover:bg-gray-800 transition"
+                                            >
+                                                Update Time
+                                            </Link>
+                                        )}
                                     </div>
                                     {race?.routes?.start_address && (
                                         <div className="flex items-center gap-2">

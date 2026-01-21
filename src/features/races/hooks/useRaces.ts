@@ -100,6 +100,32 @@ export interface RaceFilters {
     offset?: number
 }
 
+export const updateRaceTime = async (input: {
+    race_id: string
+    start_time?: string
+    end_time?: string
+    message?: string
+}): Promise<Race> => {
+    const res = await privateApi.patch("/api/group-races/update-time", input)
+    return res.data
+}
+
+export const useUpdateRaceTime = () => {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: updateRaceTime,
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["races"] })
+            queryClient.invalidateQueries({ queryKey: ["notifications"] })
+
+            queryClient.invalidateQueries({
+                queryKey: ["race", variables.race_id],
+            })
+        },
+    })
+}
+
 export const getAllRaces = async (filters?: RaceFilters): Promise<Race[]> => {
     const res = await privateApi.get("/api/group-races", { params: filters })
     return res.data
@@ -134,14 +160,14 @@ export const removeParticipant = async (input: {
 }
 
 export const getParticipantsByRace = async (
-    raceId: string
+    raceId: string,
 ): Promise<Participant[]> => {
     const res = await privateApi.get(`/api/group-races/${raceId}/participants`)
     return res.data
 }
 
 export const addTracking = async (
-    input: Omit<Tracking, "id">
+    input: Omit<Tracking, "id">,
 ): Promise<Tracking> => {
     const res = await privateApi.post("/api/group-races/tracking", input)
     return res.data
@@ -149,7 +175,7 @@ export const addTracking = async (
 
 export const getTrackingByRace = async (
     raceId: string,
-    userId?: string
+    userId?: string,
 ): Promise<Tracking[]> => {
     const res = await privateApi.get(`/api/group-races/${raceId}/tracking`, {
         params: { userId },
@@ -159,23 +185,23 @@ export const getTrackingByRace = async (
 
 export const getLatestTracking = async (
     raceId: string,
-    userId: string
+    userId: string,
 ): Promise<Tracking> => {
     const res = await privateApi.get(
-        `/api/group-races/${raceId}/tracking/latest/${userId}`
+        `/api/group-races/${raceId}/tracking/latest/${userId}`,
     )
     return res.data
 }
 
 export const addResult = async (
-    input: Omit<RaceResult, "id">
+    input: Omit<RaceResult, "id">,
 ): Promise<RaceResult> => {
     const res = await privateApi.post("/api/group-races/results", input)
     return res.data
 }
 
 export const getResultsByRace = async (
-    raceId: string
+    raceId: string,
 ): Promise<RaceResult[]> => {
     const res = await privateApi.get(`/api/group-races/${raceId}/results`)
     return res.data
@@ -334,11 +360,11 @@ export interface PublishResultsPayload {
 }
 
 export const publishRaceResults = async (
-    payload: PublishResultsPayload
+    payload: PublishResultsPayload,
 ): Promise<{ message: string }> => {
     const res = await privateApi.post(
         "/api/group-races/results/publish",
-        payload
+        payload,
     )
     return res.data
 }
@@ -369,7 +395,7 @@ export const updateParticipantBib = async (input: {
 }) => {
     const res = await privateApi.patch(
         "/api/group-races/participants/bib",
-        input
+        input,
     )
     return res.data
 }
@@ -470,7 +496,7 @@ export interface RunnerProfileStats {
 }
 
 export const getRunnerProfileStats = async (
-    userId: string
+    userId: string,
 ): Promise<RunnerProfileStats> => {
     const res = await privateApi.get("/api/group-races/runners/stats", {
         params: { userId },
@@ -614,7 +640,7 @@ export const getRaceRevenue = async (raceId: string): Promise<RaceRevenue> => {
 }
 
 export const getTotalEstimatedRevenue = async (
-    userId?: string
+    userId?: string,
 ): Promise<TotalRevenueResponse> => {
     const url = userId
         ? `/api/group-races/revenue/total?userId=${userId}`
