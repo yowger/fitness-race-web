@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { loadStripe, type StripeElements } from "@stripe/stripe-js"
+import { loadStripe, type Stripe } from "@stripe/stripe-js"
 import { Elements } from "@stripe/react-stripe-js"
 import Checkout from "../components/Checkout"
 import { useAddParticipant, useRace } from "../hooks/useRaces"
@@ -21,7 +21,7 @@ export default function PaymentRacePage() {
     const { id } = useParams()
     const { data: race, isLoading } = useRace(id!)
 
-    const [stripe, setStripe] = useState<StripeElements | null>(null)
+    const [stripe, setStripe] = useState<Stripe | null>(null)
     const [clientSecret, setClientSecret] = useState("")
 
     const addParticipantMutation = useAddParticipant()
@@ -255,7 +255,7 @@ export default function PaymentRacePage() {
                                             </p>
                                             <p className="font-bold text-gray-900">
                                                 {new Date(
-                                                    race.start_time
+                                                    race.start_time,
                                                 ).toLocaleDateString("en-US", {
                                                     month: "short",
                                                     day: "numeric",
@@ -287,7 +287,7 @@ export default function PaymentRacePage() {
                                             </p>
                                             <p className="font-bold text-gray-900">
                                                 {new Date(
-                                                    race.start_time
+                                                    race.start_time,
                                                 ).toLocaleTimeString("en-US", {
                                                     hour: "2-digit",
                                                     minute: "2-digit",
@@ -302,7 +302,7 @@ export default function PaymentRacePage() {
                                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg mb-4">
                                         <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-green-500 rounded-full flex items-center justify-center text-white font-black text-lg">
                                             {race.created_by_user.full_name?.charAt(
-                                                0
+                                                0,
                                             ) || "?"}
                                         </div>
                                         <div>
@@ -334,7 +334,7 @@ export default function PaymentRacePage() {
                                                 style={{
                                                     width: `${Math.min(
                                                         progressPercentage,
-                                                        100
+                                                        100,
                                                     )}%`,
                                                 }}
                                             ></div>
