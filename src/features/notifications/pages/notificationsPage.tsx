@@ -7,6 +7,7 @@ import {
 // import { Bell, CheckCheck, Filter, Trash2 } from "lucide-react"
 import { Bell, CheckCheck } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
+import { Link } from "react-router-dom"
 
 export default function NotificationsPage() {
     // const [filter, setFilter] = useState<"all" | "unread">("all")
@@ -16,6 +17,7 @@ export default function NotificationsPage() {
         limit: 50,
         unreadOnly: filter === "unread",
     })
+    console.log("🚀 ~ NotificationsPage ~ notifications:", notifications)
 
     const markAll = useMarkAllNotificationsAsRead()
     const markOne = useMarkNotificationAsRead()
@@ -116,85 +118,114 @@ export default function NotificationsPage() {
                 {/* Notifications List */}
                 {notifications && notifications.length > 0 ? (
                     <div className="space-y-3">
-                        {notifications.map((n) => (
-                            <div
-                                key={n.id}
-                                onClick={() =>
-                                    !n.is_read && markOne.mutate(n.id)
-                                }
-                                className={`group relative overflow-hidden rounded-2xl border transition-all duration-200 cursor-pointer ${
-                                    n.is_read
-                                        ? "bg-white border-gray-200 hover:border-gray-300"
-                                        : "bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:border-blue-300 shadow-md hover:shadow-lg"
-                                }`}
-                            >
-                                {/* Unread indicator stripe */}
-                                {!n.is_read && (
-                                    <div
-                                        className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${getNotificationColor(n.type)}`}
-                                    />
-                                )}
+                        {notifications.map((n) => {
+                            const raceId = n.data?.race_id
 
-                                <div className="p-5 flex gap-4">
-                                    {/* Icon */}
-                                    <div
-                                        className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${getNotificationColor(n.type)} flex items-center justify-center text-white text-xl shadow-md`}
-                                    >
-                                        {/* {getNotificationIcon(n.type)} */}
-                                        {getNotificationIcon()}
-                                    </div>
+                            // If raceId exists, wrap content in Link
+                            const content = (
+                                <>
+                                    {/* Unread indicator stripe */}
+                                    {!n.is_read && (
+                                        <div
+                                            className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${getNotificationColor(
+                                                n.type,
+                                            )}`}
+                                        />
+                                    )}
 
-                                    {/* Content */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-start justify-between gap-3 mb-1">
-                                            <h3
-                                                className={`text-base font-semibold ${
-                                                    n.is_read
-                                                        ? "text-gray-700"
-                                                        : "text-gray-900"
-                                                }`}
-                                            >
-                                                {n.title}
-                                            </h3>
-
-                                            {!n.is_read && (
-                                                <span className="flex-shrink-0 w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse" />
-                                            )}
+                                    <div className="p-5 flex gap-4">
+                                        {/* Icon */}
+                                        <div
+                                            className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${getNotificationColor(
+                                                n.type,
+                                            )} flex items-center justify-center text-white text-xl shadow-md`}
+                                        >
+                                            {getNotificationIcon()}
                                         </div>
 
-                                        {n.message && (
-                                            <p
-                                                className={`text-sm mb-2 ${
-                                                    n.is_read
-                                                        ? "text-gray-500"
-                                                        : "text-gray-700"
-                                                }`}
-                                            >
-                                                {n.message}
-                                            </p>
-                                        )}
+                                        {/* Content */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between gap-3 mb-1">
+                                                <h3
+                                                    className={`text-base font-semibold ${
+                                                        n.is_read
+                                                            ? "text-gray-700"
+                                                            : "text-gray-900"
+                                                    }`}
+                                                >
+                                                    {n.title}
+                                                </h3>
 
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-xs text-gray-500 font-medium">
-                                                {formatDistanceToNow(
-                                                    new Date(n.created_at),
-                                                    { addSuffix: true },
+                                                {!n.is_read && (
+                                                    <span className="flex-shrink-0 w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse" />
                                                 )}
-                                            </span>
+                                            </div>
 
-                                            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-md font-medium">
-                                                {n.type
-                                                    .replace(/_/g, " ")
-                                                    .toUpperCase()}
-                                            </span>
+                                            {n.message && (
+                                                <p
+                                                    className={`text-sm mb-2 ${
+                                                        n.is_read
+                                                            ? "text-gray-500"
+                                                            : "text-gray-700"
+                                                    }`}
+                                                >
+                                                    {n.message}
+                                                </p>
+                                            )}
+
+                                            <div className="flex items-center gap-4">
+                                                <span className="text-xs text-gray-500 font-medium">
+                                                    {formatDistanceToNow(
+                                                        new Date(n.created_at),
+                                                        { addSuffix: true },
+                                                    )}
+                                                </span>
+
+                                                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-md font-medium">
+                                                    {n.type
+                                                        .replace(/_/g, " ")
+                                                        .toUpperCase()}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Hover effect overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-purple-500/0 group-hover:from-blue-500/5 group-hover:to-purple-500/5 transition-all duration-200 pointer-events-none" />
-                            </div>
-                        ))}
+                                    {/* Hover overlay */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-purple-500/0 group-hover:from-blue-500/5 group-hover:to-purple-500/5 transition-all duration-200 pointer-events-none" />
+                                </>
+                            )
+
+                            return raceId ? (
+                                <Link
+                                    key={n.id}
+                                    to={`/dashboard/races/${raceId}`}
+                                    onClick={() =>
+                                        !n.is_read && markOne.mutate(n.id)
+                                    }
+                                    className={`bg-white block group relative overflow-hidden rounded-2xl border transition-all duration-200 cursor-pointer ${
+                                        n.is_read
+                                            ? "bg-white border-gray-200 hover:border-gray-300"
+                                            : "bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:border-blue-300 shadow-md hover:shadow-lg"
+                                    }`}
+                                >
+                                    {content}
+                                </Link>
+                            ) : (
+                                <div
+                                    key={n.id}
+                                    onClick={() =>
+                                        !n.is_read && markOne.mutate(n.id)
+                                    }
+                                    className={`group relative overflow-hidden rounded-2xl border transition-all duration-200 cursor-pointer ${
+                                        n.is_read
+                                            ? "bg-white border-gray-200 hover:border-gray-300"
+                                            : "bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:border-blue-300 shadow-md hover:shadow-lg"
+                                    }`}
+                                >
+                                    {content}
+                                </div>
+                            )
+                        })}
                     </div>
                 ) : (
                     // Empty State
