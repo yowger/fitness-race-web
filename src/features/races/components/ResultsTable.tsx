@@ -60,12 +60,16 @@ function hmsToMs(value: string): number | null {
     const parts = value.split(":").map(Number)
     if (parts.some(isNaN)) return null
 
-    const [h = 0, m = 0, s = 0] =
-        parts.length === 3
-            ? parts
-            : parts.length === 2
-            ? [0, parts[0], parts[1]]
-            : [0, 0, parts[0]]
+    let h = 0,
+        m = 0,
+        s = 0
+
+    if (parts.length === 3) [h, m, s] = parts
+    else if (parts.length === 2) [m, s] = parts
+    else if (parts.length === 1) [s] = parts
+    else return null
+
+    if (m >= 60 || s >= 60) return null
 
     return (h * 3600 + m * 60 + s) * 1000
 }
@@ -161,8 +165,8 @@ function SortableRow({
                     isSelected
                         ? "bg-cyan-50 ring-2 ring-cyan-500 ring-inset"
                         : hoveredRow === r.user_id
-                        ? "bg-cyan-50/50"
-                        : "hover:bg-gray-50"
+                          ? "bg-cyan-50/50"
+                          : "hover:bg-gray-50"
                 }
             `}
         >
@@ -191,17 +195,14 @@ function SortableRow({
             <td className="px-6 py-4 whitespace-nowrap">
                 <input
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9:]*"
+                    placeholder="HH:MM:SS"
                     value={r.finish_time ? msToHMS(r.finish_time) : ""}
                     disabled={r.status !== "Finished"}
-                    placeholder="HH:MM:SS"
-                    className={`w-28 px-3 py-2 font-mono font-semibold text-sm rounded-lg border-2 transition-all
-                        ${
-                            r.status === "Finished"
-                                ? "border-gray-300 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-zinc-900 bg-white"
-                                : "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
-                        }`}
+                    className="w-28 px-3 py-2 font-mono font-semibold text-sm rounded-lg border-2"
                     onChange={(e) => {
-                        const value = e.target.value
+                        const value = e.target.value.replace(/[^0-9:]/g, "")
                         const ms = hmsToMs(value)
                         if (ms !== null) {
                             onFinishTimeChange?.(r.user_id, ms)
@@ -321,10 +322,10 @@ export function ResultsTable({
 
     const handleStatusChange = (
         userId: string,
-        newStatus: RaceResult["status"]
+        newStatus: RaceResult["status"],
     ) => {
         const updated = rows.map((r) =>
-            r.user_id === userId ? { ...r, status: newStatus } : r
+            r.user_id === userId ? { ...r, status: newStatus } : r,
         )
         setRows(updated)
         onResultsChange?.(updated)
@@ -332,7 +333,7 @@ export function ResultsTable({
 
     const handleFinishTimeChange = (userId: string, finishTime: number) => {
         const updated = rows.map((r) =>
-            r.user_id === userId ? { ...r, finish_time: finishTime } : r
+            r.user_id === userId ? { ...r, finish_time: finishTime } : r,
         )
         setRows(updated)
         onResultsChange?.(updated)
@@ -366,10 +367,10 @@ export function ResultsTable({
                     const { active, over } = event
                     if (!over) return
                     const oldIndex = rows.findIndex(
-                        (r) => r.user_id === active.id
+                        (r) => r.user_id === active.id,
                     )
                     const newIndex = rows.findIndex(
-                        (r) => r.user_id === over.id
+                        (r) => r.user_id === over.id,
                     )
                     if (oldIndex !== newIndex) moveRow(oldIndex, newIndex)
                 }}
