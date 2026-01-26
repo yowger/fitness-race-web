@@ -44,34 +44,17 @@ interface SortableRowProps {
     onRowClick?: (userId: string) => void
 }
 
-function msToHMS(ms: number): string {
+function msToHMS(ms: number) {
     const totalSeconds = Math.floor(ms / 1000)
-
     const hours = Math.floor(totalSeconds / 3600)
     const minutes = Math.floor((totalSeconds % 3600) / 60)
     const seconds = totalSeconds % 60
 
-    const pad = (n: number) => n.toString().padStart(2, "0")
-
-    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+    return { hours, minutes, seconds }
 }
 
-function hmsToMs(value: string): number | null {
-    const parts = value.split(":").map(Number)
-    if (parts.some(isNaN)) return null
-
-    let h = 0,
-        m = 0,
-        s = 0
-
-    if (parts.length === 3) [h, m, s] = parts
-    else if (parts.length === 2) [m, s] = parts
-    else if (parts.length === 1) [s] = parts
-    else return null
-
-    if (m >= 60 || s >= 60) return null
-
-    return (h * 3600 + m * 60 + s) * 1000
+function hmsToMs(hours: number, minutes: number, seconds: number) {
+    return ((hours * 60 + minutes) * 60 + seconds) * 1000
 }
 
 function SortableRow({
@@ -193,23 +176,84 @@ function SortableRow({
                 </div>
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
-                <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9:]*"
-                    placeholder="HH:MM:SS"
-                    value={r.finish_time ? msToHMS(r.finish_time) : ""}
-                    disabled={r.status !== "Finished"}
-                    className="w-28 px-3 py-2 font-mono font-semibold text-sm rounded-lg border-2"
-                    onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9:]/g, "")
-                        const ms = hmsToMs(value)
-                        if (ms !== null) {
-                            onFinishTimeChange?.(r.user_id, ms)
-                        }
-                    }}
-                />
+                {(() => {
+                    const { hours, minutes, seconds } = r.finish_time
+                        ? msToHMS(r.finish_time)
+                        : { hours: 0, minutes: 0, seconds: 0 }
+
+                    return (
+                        <div className="flex items-center gap-2">
+                            {/* HOURS */}
+                            <input
+                                type="number"
+                                min={0}
+                                disabled={r.status !== "Finished"}
+                                value={hours}
+                                className="w-16 px-2 py-2 text-sm font-mono font-semibold rounded-lg border-2 text-center"
+                                onChange={(e) => {
+                                    const h = Math.max(
+                                        0,
+                                        Number(e.target.value) || 0,
+                                    )
+                                    onFinishTimeChange?.(
+                                        r.user_id,
+                                        hmsToMs(h, minutes, seconds),
+                                    )
+                                }}
+                            />
+
+                            <span className="font-mono font-semibold text-gray-500">
+                                :
+                            </span>
+
+                            {/* MINUTES */}
+                            <input
+                                type="number"
+                                min={0}
+                                max={59}
+                                disabled={r.status !== "Finished"}
+                                value={minutes}
+                                className="w-16 px-2 py-2 text-sm font-mono font-semibold rounded-lg border-2 text-center"
+                                onChange={(e) => {
+                                    let m = Number(e.target.value) || 0
+                                    if (m > 59) m = 59
+                                    if (m < 0) m = 0
+
+                                    onFinishTimeChange?.(
+                                        r.user_id,
+                                        hmsToMs(hours, m, seconds),
+                                    )
+                                }}
+                            />
+
+                            <span className="font-mono font-semibold text-gray-500">
+                                :
+                            </span>
+
+                            {/* SECONDS */}
+                            <input
+                                type="number"
+                                min={0}
+                                max={59}
+                                disabled={r.status !== "Finished"}
+                                value={seconds}
+                                className="w-16 px-2 py-2 text-sm font-mono font-semibold rounded-lg border-2 text-center"
+                                onChange={(e) => {
+                                    let s = Number(e.target.value) || 0
+                                    if (s > 59) s = 59
+                                    if (s < 0) s = 0
+
+                                    onFinishTimeChange?.(
+                                        r.user_id,
+                                        hmsToMs(hours, minutes, s),
+                                    )
+                                }}
+                            />
+                        </div>
+                    )
+                })()}
             </td>
+
             <td className="px-6 py-4 whitespace-nowrap">
                 <select
                     value={r.status}
