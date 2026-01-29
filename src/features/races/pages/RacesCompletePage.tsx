@@ -131,27 +131,49 @@ export default function RaceResultsPage() {
     const { id: raceId } = useParams()
     const { data: race } = useRace(raceId!)
     const { data: results } = useResults(raceId!)
+    console.log("🚀 ~ RaceResultsPage ~ results:", results)
     const { data: raceTracking } = useTracking(raceId!)
 
     const resultsData: RaceResults[] =
-        results?.map((result) => {
-            const userId = result.users?.id ?? ""
+        results
+            ?.map((result) => {
+                const userId = result.users?.id ?? ""
 
-            const userTracking =
-                raceTracking?.filter((t) => t.user_id === userId) ?? []
+                const userTracking =
+                    raceTracking?.filter((t) => t.user_id === userId) ?? []
 
-            const { pace, splits } = computePaceAndSplits(userTracking)
+                const { pace, splits } = computePaceAndSplits(userTracking)
 
-            return {
-                id: userId,
-                bib: String(result.bib_number ?? 0),
-                name: result.users?.full_name || "Unknown",
-                time: safeElapsedTime(result.finish_time),
-                pace,
-                position: result.position ?? 0,
-                splits,
-            }
-        }) ?? []
+                return {
+                    id: userId,
+                    bib: String(result.bib_number ?? 0),
+                    name: result.users?.full_name || "Unknown",
+                    time: safeElapsedTime(result.finish_time),
+                    pace,
+                    position: result.position ?? 0,
+                    splits,
+                }
+            })
+            .sort((a, b) => (a.position ?? 0) - (b.position ?? 0)) ?? []
+    // const resultsData: RaceResults[] =
+    //     results?.map((result) => {
+    //         const userId = result.users?.id ?? ""
+
+    //         const userTracking =
+    //             raceTracking?.filter((t) => t.user_id === userId) ?? []
+
+    //         const { pace, splits } = computePaceAndSplits(userTracking)
+
+    //         return {
+    //             id: userId,
+    //             bib: String(result.bib_number ?? 0),
+    //             name: result.users?.full_name || "Unknown",
+    //             time: safeElapsedTime(result.finish_time),
+    //             pace,
+    //             position: result.position ?? 0,
+    //             splits,
+    //         }
+    //     }) ?? []
 
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedRunner, setSelectedRunner] = useState<RaceResults | null>(
